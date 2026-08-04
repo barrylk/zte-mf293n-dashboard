@@ -37,7 +37,7 @@ const emptyData: RouterData = {
   userIpAddress: "", antennaChains: [], power: { source: "External DC", batteryPresent: false, batteryPercent: 0, temperatureC: 0, txPower: "", wattsAvailable: false }, blockedDevices: [], apn: { profileName: "", accessPoint: "", authMode: "none", username: "", index: "0", mode: "", interfaceVersion: 0 },
 };
 
-const BEACON_VERSION = "0.2.1";
+const BEACON_VERSION = "0.2.2";
 const nav = ["Overview", "Network", "Wi-Fi", "Devices", "Messages", "System", "Admin Functions", "Tunnels", "About"];
 const sectionCopy: Record<string, { eyebrow: string; title: string; note: string }> = {
   Overview: { eyebrow: "Home network", title: "Router overview", note: "Live status from your ZTE MF293N." },

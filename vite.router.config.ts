@@ -10,5 +10,11 @@ export default defineConfig({
     emptyOutDir: true,
     target: "es2018",
     assetsInlineLimit: 4096,
+    rollupOptions: {
+      input: {
+        index: "router-ui/index.html",
+        mobile: "router-ui/mobile.html",
+      },
+    },
   },
 });

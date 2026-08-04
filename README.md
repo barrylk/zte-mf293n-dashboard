@@ -36,7 +36,7 @@ The inspected MF293N has an ARMv7 CPU, Linux 3.4.110, approximately 54 MB RAM, a
 
 ## Beacon GitHub updates
 
-Pushing a tag such as `v0.2.1` runs `.github/workflows/beacon-release.yml`. It builds Beacon and publishes:
+Pushing a tag such as `v0.2.2` runs `.github/workflows/beacon-release.yml`. It builds Beacon and publishes:
 
 - `beacon-router-ui.zip`
 - `beacon-router-ui.zip.sha256`
