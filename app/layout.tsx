@@ -6,8 +6,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Beacon · ZTE MF293N Router Dashboard",
-  description: "A modern local control center for the ZTE MF293N LTE router.",
+  title: "Beacon - ZTE MF293N Router Dashboard",
+  description: "Beacon is a modern local control center for the ZTE MF293N, developed by Nirmala.",
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 
