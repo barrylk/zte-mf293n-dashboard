@@ -1,0 +1,40 @@
+name: Beacon router release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:router
+      - name: Add release metadata
+        run: |
+          mkdir -p release-package/web release-package/router-tools
+          cp -a dist-router/. release-package/web/
+          cp -a router-tools/. release-package/router-tools/
+          printf '{"version":"%s","commit":"%s","target":"ZTE MF293N","channel":"stable"}\n' "${GITHUB_REF_NAME#v}" "$GITHUB_SHA" > release-package/web/beacon-version.json
+          cp release-package/web/beacon-version.json release-package/beacon-version.json
+      - name: Package Beacon OTA payload
+        run: |
+          cd release-package
+          zip -9 -r ../beacon-router-ui.zip .
+          cd ..
+          sha256sum beacon-router-ui.zip > beacon-router-ui.zip.sha256
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --generate-notes --title "Beacon $GITHUB_REF_NAME"
+          gh release upload "$GITHUB_REF_NAME" beacon-router-ui.zip beacon-router-ui.zip.sha256 tools/update-beacon-from-github.ps1 --clobber
