@@ -58,8 +58,20 @@ try {
   & $AdbPath shell $activation
   if ($LASTEXITCODE -ne 0) { throw "Router activation failed. The previous UI was not intentionally removed." }
   if ($hasTools) {
-    & $AdbPath shell "if ! grep -q BEACON_AGENT_BEGIN /etc/rc; then mount -o remount,rw /dev/root / && cat '$activeTools/rc-hook.sh' >> /etc/rc && /bin/sh -n /etc/rc && sync && mount -o remount,ro /dev/root /; fi"
-    if ($LASTEXITCODE -ne 0) { throw "Beacon was updated, but its boot agent hook could not be installed." }
+    $rcLocal = Join-Path $temporary "router-rc"
+    & $AdbPath pull /etc/rc $rcLocal
+    if ($LASTEXITCODE -ne 0) { throw "Beacon was updated, but /etc/rc could not be read." }
+    $latin1 = [System.Text.Encoding]::GetEncoding(28591)
+    $rcText = [System.IO.File]::ReadAllText($rcLocal, $latin1)
+    $hookText = (Get-Content -LiteralPath (Join-Path $toolsPayload "rc-hook.sh") -Raw).Replace("`r`n", "`n").TrimEnd() + "`n"
+    $marker = '(?ms)^# BEACON_AGENT_BEGIN\r?\n.*?^# BEACON_AGENT_END\r?\n?'
+    if ([regex]::IsMatch($rcText, $marker)) { $rcText = [regex]::Replace($rcText, $marker, $hookText, 1) }
+    else { $rcText = $rcText.TrimEnd("`r", "`n") + "`n" + $hookText }
+    [System.IO.File]::WriteAllText($rcLocal, $rcText, $latin1)
+    & $AdbPath push $rcLocal /tmp/rc.beacon-update
+    if ($LASTEXITCODE -ne 0) { throw "Beacon was updated, but its boot hook could not be staged." }
+    & $AdbPath shell "/bin/sh -n /tmp/rc.beacon-update && mount -o remount,rw /dev/root / && if [ ! -f /etc/rc.pre-beacon ]; then cp /etc/rc /etc/rc.pre-beacon; fi && cp /tmp/rc.beacon-update /etc/rc && chmod 755 /etc/rc && /bin/sh -n /etc/rc && sync && mount -o remount,ro /dev/root /"
+    if ($LASTEXITCODE -ne 0) { throw "Beacon was updated, but its boot hook could not be installed safely." }
   }
   Write-Host "Beacon $($release.tag_name) installed. Reload http://192.168.1.1/index.html"
   Write-Host "Rollback copies: $previousPath and $previousTools"
