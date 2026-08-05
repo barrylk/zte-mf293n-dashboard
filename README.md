@@ -10,9 +10,10 @@ Beacon is a modern, SLT-free, local interface for the ZTE MF293N LTE router, dev
 - MF293N challenge-response login; no default password is embedded
 - Live carrier, radio quality, throughput, traffic and firmware data
 - Wi-Fi and Ethernet client discovery with names, IP and MAC addresses
-- Wi-Fi SSID, password, coverage and client-limit settings
+- Wi-Fi SSID, password, safe maximum coverage and client-limit settings
+- Stock-firmware advanced Wi-Fi controls: 802.11 b/g/n mode, channels 1–13, 20/40 MHz width, regulatory country code and automatic/full negotiated rate
 - Client rename, block and unblock controls
-- APN editing and cellular reconnect
+- Serving-carrier detection, Sri Lankan carrier APN presets, manual APN editing and cellular reconnect
 - Full SMS inbox, send, read and delete
 - Interactive USSD send, reply and cancel
 - Verified LTE band selection for bands 3, 5, 38 and 41, including combined-mask decoding and post-change verification
@@ -24,6 +25,7 @@ Beacon is a modern, SLT-free, local interface for the ZTE MF293N LTE router, dev
 - Honest 12V power-source reporting (the board has no exposed current sensor, so watts are not invented)
 - About and credits page with Nirmala's website, GitHub and Facebook links
 - GitHub Releases update channel with SHA-256 verified web-and-device packages and rollback copies
+- Light/dark themes and responsive mobile layout with installable web-app metadata
 - OTA check, traffic reset and normal restart
 - Admin Functions section with verified UID-0 ADB status and guarded recovery controls
 - Tunnel runtime audit for V2Ray, WireGuard, OpenVPN, IKEv2, PPTP and L2TP
@@ -36,13 +38,15 @@ The inspected MF293N has an ARMv7 CPU, Linux 3.4.110, approximately 54 MB RAM, a
 
 ## Beacon GitHub updates
 
-Pushing a tag such as `v0.2.2` runs `.github/workflows/beacon-release.yml`. It builds Beacon and publishes:
+Pushing a tag such as `v0.3.0` runs `.github/workflows/beacon-release.yml`. It builds Beacon and publishes:
 
 - `beacon-router-ui.zip`
 - `beacon-router-ui.zip.sha256`
 - `update-beacon-from-github.ps1`
 
-The About page checks the latest GitHub Release. Because the ZTE GoAhead server exposes no safe authenticated filesystem-update endpoint and the firmware has no HTTPS download client, installation uses the supplied ADB updater. The updater verifies SHA-256, stages both the UI and device agent, installs the tested boot hook when needed, and retains `/mnt/userdata/beacon-web.previous` plus `/mnt/userdata/beacon-tools.previous` for rollback.
+The About page checks the latest GitHub Release. After the one-time ADB bootstrap, download the release ZIP in the browser and choose **Select package & install**. Beacon's 68 KB on-device OTA helper requires an active router administrator session, verifies the package against GitHub's SHA-256 asset digest, rejects unsafe archives, stages the update on writable userdata, and atomically retains `/mnt/userdata/beacon-web.previous` plus `/mnt/userdata/beacon-tools.previous` for rollback. It never writes modem, kernel or bootloader partitions.
+
+`update-beacon-from-github.ps1` remains the bootstrap and recovery path when the OTA helper is not installed or the web UI is unavailable.
 
 ## Screenshots
 

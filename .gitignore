@@ -38,6 +38,7 @@ yarn-error.log*
 next-env.d.ts
 /dist/
 /dist-router/
+/dist-tools/
 /.wrangler/
 /outputs/
 /work/

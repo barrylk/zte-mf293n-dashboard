@@ -1,0 +1,11 @@
+{
+  "name": "Beacon MF293N Control Center",
+  "short_name": "Beacon",
+  "description": "Local mobile control center for the ZTE MF293N, developed by Nirmala.",
+  "start_url": "./mobile.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#132c2f",
+  "theme_color": "#132c2f",
+  "icons": [{"src":"./beacon-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

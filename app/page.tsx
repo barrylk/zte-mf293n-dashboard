@@ -1,58 +1,275 @@
 "use client";
+/* eslint-disable react/no-unescaped-entities */
 
 import { useEffect, useMemo, useState } from "react";
-import type { CSSProperties, FormEvent } from "react";
+import type { ChangeEvent, CSSProperties, FormEvent } from "react";
 
-type Device = { name: string; detail: string; activity: string; mark: string; macAddress: string; ipAddress: string };
-type PendingAction = { action: string; title: string; description: string; payload?: Record<string, unknown>; danger?: boolean; endpoint?: "control" | "communications" | "radio" | "traffic" | "tunnels"; onSuccess?: (result: Record<string, unknown>) => void };
-type SmsMessage = { id: string; number: string; content: string; time: string; unread: boolean; tag: string };
+type Device = {
+  name: string;
+  detail: string;
+  activity: string;
+  mark: string;
+  macAddress: string;
+  ipAddress: string;
+};
+type PendingAction = {
+  action: string;
+  title: string;
+  description: string;
+  payload?: Record<string, unknown>;
+  danger?: boolean;
+  endpoint?: "control" | "communications" | "radio" | "traffic" | "tunnels";
+  onSuccess?: (result: Record<string, unknown>) => void;
+};
+type SmsMessage = {
+  id: string;
+  number: string;
+  content: string;
+  time: string;
+  unread: boolean;
+  tag: string;
+};
 type SystemTelemetry = {
-  ok: boolean; updatedAt: number; uptimeSeconds: number;
+  ok: boolean;
+  updatedAt: number;
+  uptimeSeconds: number;
   cpu: { percent: number; load1: number };
-  memory: { totalKb: number; usedKb: number; availableKb: number; percent: number };
-  storage: { mount: string; totalKb: number; usedKb: number; freeKb: number; percent: number };
-  led: { supported: boolean; mode: string; state: string; color: string; rsrp: number; brightness: number; goodThreshold: number; fairThreshold: number; pulseMs: number; channels: string[] };
+  memory: {
+    totalKb: number;
+    usedKb: number;
+    availableKb: number;
+    percent: number;
+  };
+  storage: {
+    mount: string;
+    totalKb: number;
+    usedKb: number;
+    freeKb: number;
+    percent: number;
+  };
+  led: {
+    supported: boolean;
+    mode: string;
+    state: string;
+    color: string;
+    rsrp: number;
+    brightness: number;
+    goodThreshold: number;
+    fairThreshold: number;
+    pulseMs: number;
+    channels: string[];
+  };
 };
 type RouterData = {
-  connected: boolean; networkType: string; provider: string; signalBars: number; signalDbm: number;
-  sinr: number; rsrq: number; rssi: number; physicalCell: string; cellId: string; band: string;
-  channel: string; downloadMbps: number; uploadMbps: number; receivedBytes: number; sentBytes: number;
-  uptimeSeconds: number; monthlyReceivedBytes: number; monthlySentBytes: number; ssid: string;
-  coverage: string; maxDevices: number; authMode: string; lanIp: string; wanIp: string;
-  softwareVersion: string; hardwareVersion: string; webVersion: string; imei: string;
-  unreadMessages: number; devices: Device[]; updatedAt: string; userIpAddress: string;
+  connected: boolean;
+  networkType: string;
+  provider: string;
+  signalBars: number;
+  signalDbm: number;
+  sinr: number;
+  rsrq: number;
+  rssi: number;
+  physicalCell: string;
+  cellId: string;
+  band: string;
+  channel: string;
+  downloadMbps: number;
+  uploadMbps: number;
+  receivedBytes: number;
+  sentBytes: number;
+  uptimeSeconds: number;
+  monthlyReceivedBytes: number;
+  monthlySentBytes: number;
+  ssid: string;
+  coverage: string;
+  maxDevices: number;
+  authMode: string;
+  lanIp: string;
+  wanIp: string;
+  softwareVersion: string;
+  hardwareVersion: string;
+  webVersion: string;
+  imei: string;
+  unreadMessages: number;
+  devices: Device[];
+  updatedAt: string;
+  userIpAddress: string;
   antennaChains: Array<{ id: number; rsrp: number; sinr: number }>;
-  power: { source: string; batteryPresent: boolean; batteryPercent: number; temperatureC: number; txPower: string; wattsAvailable: boolean };
+  power: {
+    source: string;
+    batteryPresent: boolean;
+    batteryPercent: number;
+    temperatureC: number;
+    txPower: string;
+    wattsAvailable: boolean;
+  };
   blockedDevices: Array<{ name: string; macAddress: string }>;
-  apn: { profileName: string; accessPoint: string; authMode: string; username: string; index: string; mode: string; interfaceVersion: number };
+  apn: {
+    profileName: string;
+    accessPoint: string;
+    authMode: string;
+    username: string;
+    index: string;
+    mode: string;
+    interfaceVersion: number;
+  };
+  wifiAdvanced: {
+    mode: string;
+    countryCode: string;
+    channel: string;
+    rate: string;
+    bandwidth: string;
+    band: string;
+  };
 };
 
 const emptyData: RouterData = {
-  connected: false, networkType: "--", provider: "--", signalBars: 0, signalDbm: 0,
-  sinr: 0, rsrq: 0, rssi: 0, physicalCell: "--", cellId: "--", band: "--", channel: "--",
-  downloadMbps: 0, uploadMbps: 0, receivedBytes: 0, sentBytes: 0, uptimeSeconds: 0,
-  monthlyReceivedBytes: 0, monthlySentBytes: 0, ssid: "--", coverage: "--", maxDevices: 0,
-  authMode: "--", lanIp: "--", wanIp: "--", softwareVersion: "--", hardwareVersion: "--",
-  webVersion: "--", imei: "--", unreadMessages: 0, devices: [], updatedAt: "",
-  userIpAddress: "", antennaChains: [], power: { source: "External DC", batteryPresent: false, batteryPercent: 0, temperatureC: 0, txPower: "", wattsAvailable: false }, blockedDevices: [], apn: { profileName: "", accessPoint: "", authMode: "none", username: "", index: "0", mode: "", interfaceVersion: 0 },
+  connected: false,
+  networkType: "--",
+  provider: "--",
+  signalBars: 0,
+  signalDbm: 0,
+  sinr: 0,
+  rsrq: 0,
+  rssi: 0,
+  physicalCell: "--",
+  cellId: "--",
+  band: "--",
+  channel: "--",
+  downloadMbps: 0,
+  uploadMbps: 0,
+  receivedBytes: 0,
+  sentBytes: 0,
+  uptimeSeconds: 0,
+  monthlyReceivedBytes: 0,
+  monthlySentBytes: 0,
+  ssid: "--",
+  coverage: "--",
+  maxDevices: 0,
+  authMode: "--",
+  lanIp: "--",
+  wanIp: "--",
+  softwareVersion: "--",
+  hardwareVersion: "--",
+  webVersion: "--",
+  imei: "--",
+  unreadMessages: 0,
+  devices: [],
+  updatedAt: "",
+  userIpAddress: "",
+  antennaChains: [],
+  power: {
+    source: "External DC",
+    batteryPresent: false,
+    batteryPercent: 0,
+    temperatureC: 0,
+    txPower: "",
+    wattsAvailable: false,
+  },
+  blockedDevices: [],
+  apn: {
+    profileName: "",
+    accessPoint: "",
+    authMode: "none",
+    username: "",
+    index: "0",
+    mode: "",
+    interfaceVersion: 0,
+  },
+  wifiAdvanced: {
+    mode: "4",
+    countryCode: "US",
+    channel: "0",
+    rate: "0",
+    bandwidth: "1",
+    band: "b",
+  },
 };
 
-const BEACON_VERSION = "0.2.2";
-const nav = ["Overview", "Network", "Wi-Fi", "Devices", "Messages", "System", "Admin Functions", "Tunnels", "About"];
-const sectionCopy: Record<string, { eyebrow: string; title: string; note: string }> = {
-  Overview: { eyebrow: "Home network", title: "Router overview", note: "Live status from your ZTE MF293N." },
-  Network: { eyebrow: "Cellular connection", title: "Network", note: "Live radio quality, carrier details and internet path." },
-  "Wi-Fi": { eyebrow: "Wireless network", title: "Wi-Fi", note: "Current SSID, coverage and client capacity." },
-  Devices: { eyebrow: "Connected clients", title: "Devices", note: "Devices currently reported by the router." },
-  Messages: { eyebrow: "Router inbox", title: "Messages", note: "Live unread count from the device." },
-  System: { eyebrow: "Router information", title: "System", note: "Firmware, hardware and device identity." },
-  "Admin Functions": { eyebrow: "Advanced administration", title: "Admin Functions", note: "Root status, development tools and guarded boot controls." },
-  Tunnels: { eyebrow: "Private networking", title: "V2Ray, VPN & DNS", note: "DNS configuration, VPN passthrough and installed tunnel runtime status." },
-  About: { eyebrow: "Beacon project", title: "About Beacon", note: "Project details, credits, links and GitHub update channel." },
+const BEACON_VERSION = "0.3.0";
+const APN_PRESETS = [
+  {
+    id: "dialog-postpaid",
+    carrier: "Dialog",
+    label: "Dialog postpaid",
+    apn: "dialogbb",
+  },
+  {
+    id: "dialog-prepaid",
+    carrier: "Dialog",
+    label: "Dialog prepaid",
+    apn: "ppwap",
+  },
+  { id: "mobitel", carrier: "Mobitel", label: "SLT-Mobitel", apn: "mobitel" },
+  { id: "hutch", carrier: "Hutch", label: "Hutch", apn: "hutch3g" },
+  { id: "airtel", carrier: "Airtel", label: "Airtel", apn: "airtelive" },
+];
+const nav = [
+  "Overview",
+  "Network",
+  "Wi-Fi",
+  "Devices",
+  "Messages",
+  "System",
+  "Admin Functions",
+  "Tunnels",
+  "About",
+];
+const sectionCopy: Record<
+  string,
+  { eyebrow: string; title: string; note: string }
+> = {
+  Overview: {
+    eyebrow: "Home network",
+    title: "Router overview",
+    note: "Live status from your ZTE MF293N.",
+  },
+  Network: {
+    eyebrow: "Cellular connection",
+    title: "Network",
+    note: "Live radio quality, carrier details and internet path.",
+  },
+  "Wi-Fi": {
+    eyebrow: "Wireless network",
+    title: "Wi-Fi",
+    note: "Current SSID, coverage and client capacity.",
+  },
+  Devices: {
+    eyebrow: "Connected clients",
+    title: "Devices",
+    note: "Devices currently reported by the router.",
+  },
+  Messages: {
+    eyebrow: "Router inbox",
+    title: "Messages",
+    note: "Live unread count from the device.",
+  },
+  System: {
+    eyebrow: "Router information",
+    title: "System",
+    note: "Firmware, hardware and device identity.",
+  },
+  "Admin Functions": {
+    eyebrow: "Advanced administration",
+    title: "Admin Functions",
+    note: "Root status, development tools and guarded boot controls.",
+  },
+  Tunnels: {
+    eyebrow: "Private networking",
+    title: "V2Ray, VPN & DNS",
+    note: "DNS configuration, VPN passthrough and installed tunnel runtime status.",
+  },
+  About: {
+    eyebrow: "Beacon project",
+    title: "About Beacon",
+    note: "Project details, credits, links and GitHub update channel.",
+  },
 };
 
 export default function Home() {
-  const [auth, setAuth] = useState<"checking" | "loggedOut" | "loggedIn">("checking");
+  const [auth, setAuth] = useState<"checking" | "loggedOut" | "loggedIn">(
+    "checking",
+  );
   const [routerAddress, setRouterAddress] = useState("http://192.168.1.1");
   const [routerUsername, setRouterUsername] = useState("admin");
   const [routerPassword, setRouterPassword] = useState("");
@@ -68,53 +285,122 @@ export default function Home() {
   const [error, setError] = useState("");
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [acting, setActing] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
-  const visibleDevices = useMemo(() => data.devices.filter((device) => device.name.toLowerCase().includes(query.toLowerCase())), [data.devices, query]);
+  const visibleDevices = useMemo(
+    () =>
+      data.devices.filter((device) =>
+        device.name.toLowerCase().includes(query.toLowerCase()),
+      ),
+    [data.devices, query],
+  );
   const copy = sectionCopy[active];
 
   async function loadStatus(manual = false) {
     try {
       const response = await fetch("/api/router/status", { cache: "no-store" });
       const result = await response.json();
-      if (response.status === 401) { setAuth("loggedOut"); setData(emptyData); return; }
-      if (!response.ok || !result.ok) throw new Error(result.error || "Router did not respond");
+      if (response.status === 401) {
+        setAuth("loggedOut");
+        setData(emptyData);
+        return;
+      }
+      if (!response.ok || !result.ok)
+        throw new Error(result.error || "Router did not respond");
       setData(result as RouterData);
-      setHistory((current) => [...current, Number(result.downloadMbps) || 0].slice(-24));
+      setHistory((current) =>
+        [...current, Number(result.downloadMbps) || 0].slice(-24),
+      );
       setError("");
       if (manual) notify("Live router status refreshed");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unable to reach router");
+      setError(
+        caught instanceof Error ? caught.message : "Unable to reach router",
+      );
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    fetch("/api/router/session", { cache: "no-store" }).then((response)=>response.json()).then((result)=>{
-      if(result.authenticated){setRouterAddress(result.baseUrl);setRouterUsername(result.username);setAuth("loggedIn");}
-      else setAuth("loggedOut");
-    }).catch(()=>setAuth("loggedOut"));
+    fetch("/api/router/session", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.authenticated) {
+          setRouterAddress(result.baseUrl);
+          setRouterUsername(result.username);
+          setAuth("loggedIn");
+        } else setAuth("loggedOut");
+      })
+      .catch(() => setAuth("loggedOut"));
   }, []);
 
   useEffect(() => {
-    if(auth!=="loggedIn") return;
-    setLoading(true); loadStatus();
+    const saved = window.localStorage.getItem("beacon-theme");
+    const preferred =
+      saved === "dark" || saved === "light"
+        ? saved
+        : window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+    document.documentElement.dataset.theme = preferred;
+    const timer = window.setTimeout(() => setTheme(preferred), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    document.documentElement.dataset.theme = next;
+    window.localStorage.setItem("beacon-theme", next);
+  }
+
+  useEffect(() => {
+    if (auth !== "loggedIn") return;
+    const first = window.setTimeout(() => {
+      setLoading(true);
+      loadStatus();
+    }, 0);
     const timer = window.setInterval(() => loadStatus(), 5000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(timer);
+    };
   }, [auth]);
 
   async function login(event: FormEvent) {
-    event.preventDefault(); setLoggingIn(true); setLoginError("");
+    event.preventDefault();
+    setLoggingIn(true);
+    setLoginError("");
     try {
-      const response=await fetch("/api/router/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({baseUrl:routerAddress,username:routerUsername,password:routerPassword})});
-      const result=await response.json(); if(!response.ok||!result.ok)throw new Error(result.error||"Login failed");
-      setRouterPassword(""); setAuth("loggedIn");
-    } catch(caught){setLoginError(caught instanceof Error?caught.message:"Unable to log in");}
-    finally{setLoggingIn(false);}
+      const response = await fetch("/api/router/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          baseUrl: routerAddress,
+          username: routerUsername,
+          password: routerPassword,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok)
+        throw new Error(result.error || "Login failed");
+      setRouterPassword("");
+      setAuth("loggedIn");
+    } catch (caught) {
+      setLoginError(
+        caught instanceof Error ? caught.message : "Unable to log in",
+      );
+    } finally {
+      setLoggingIn(false);
+    }
   }
 
   async function logout() {
-    await fetch("/api/router/session",{method:"DELETE"}); setData(emptyData); setHistory([]); setAuth("loggedOut");
+    await fetch("/api/router/session", { method: "DELETE" });
+    setData(emptyData);
+    setHistory([]);
+    setAuth("loggedOut");
   }
 
   function notify(message: string) {
@@ -131,13 +417,28 @@ export default function Home() {
     if (!pending) return;
     setActing(true);
     try {
-      const response = await fetch(`/api/router/${pending.endpoint || "control"}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: pending.action, payload: pending.payload || {}, confirmed: true }) });
+      const response = await fetch(
+        `/api/router/${pending.endpoint || "control"}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: pending.action,
+            payload: pending.payload || {},
+            confirmed: true,
+          }),
+        },
+      );
       const result = await response.json();
-      if (!response.ok || !result.ok) throw new Error(result.error || "Router rejected the change");
+      if (!response.ok || !result.ok)
+        throw new Error(result.error || "Router rejected the change");
       notify(`${pending.title} completed`);
       pending.onSuccess?.(result as Record<string, unknown>);
       setPending(null);
-      window.setTimeout(() => loadStatus(), pending.action === "restart" ? 12000 : 1200);
+      window.setTimeout(
+        () => loadStatus(),
+        pending.action === "restart" ? 12000 : 1200,
+      );
     } catch (caught) {
       notify(caught instanceof Error ? caught.message : "Router action failed");
     } finally {
@@ -145,178 +446,2912 @@ export default function Home() {
     }
   }
 
-  if(auth!=="loggedIn") return <LoginScreen checking={auth==="checking"} address={routerAddress} setAddress={setRouterAddress} username={routerUsername} setUsername={setRouterUsername} password={routerPassword} setPassword={setRouterPassword} error={loginError} loading={loggingIn} submit={login} />;
+  if (auth !== "loggedIn")
+    return (
+      <LoginScreen
+        checking={auth === "checking"}
+        address={routerAddress}
+        setAddress={setRouterAddress}
+        username={routerUsername}
+        setUsername={setRouterUsername}
+        password={routerPassword}
+        setPassword={setRouterPassword}
+        error={loginError}
+        loading={loggingIn}
+        submit={login}
+      />
+    );
 
   return (
     <main className="app-shell">
       <aside className="sidebar" aria-label="Primary navigation">
-        <button className="brand" onClick={() => choose("Overview")} aria-label="Beacon dashboard home"><span className="brand-mark"><i /><i /><i /></span><span>beacon</span></button>
-        <nav className="nav-list">{nav.map((item, index) => <button key={item} className={active === item ? "nav-item active" : "nav-item"} onClick={() => choose(item)} aria-current={active === item ? "page" : undefined}><span className="nav-index">0{index + 1}</span>{item}{item === "Messages" && data.unreadMessages > 0 && <span className="nav-badge">{data.unreadMessages}</span>}</button>)}</nav>
-        <div className="router-mini"><div className="router-mini-top"><span className={data.connected ? "pulse" : "pulse offline"} /> {loading ? "Connecting" : data.connected ? "Router online" : "Router offline"}</div><strong>ZTE MF293N</strong><span>{data.softwareVersion || "Reading firmware"}</span><div className="router-shape"><i /><i /><i /></div></div>
-        <div className="profile"><span className="avatar">N</span><span><strong>{routerUsername}</strong><small>Developed by Nirmala</small></span><button className="profile-action" onClick={logout}>Log out</button></div>
+        <button
+          className="brand"
+          onClick={() => choose("Overview")}
+          aria-label="Beacon dashboard home"
+        >
+          <span className="brand-mark">
+            <i />
+            <i />
+            <i />
+          </span>
+          <span>beacon</span>
+        </button>
+        <nav className="nav-list">
+          {nav.map((item, index) => (
+            <button
+              key={item}
+              className={active === item ? "nav-item active" : "nav-item"}
+              onClick={() => choose(item)}
+              aria-current={active === item ? "page" : undefined}
+            >
+              <span className="nav-index">0{index + 1}</span>
+              {item}
+              {item === "Messages" && data.unreadMessages > 0 && (
+                <span className="nav-badge">{data.unreadMessages}</span>
+              )}
+            </button>
+          ))}
+        </nav>
+        <div className="router-mini">
+          <div className="router-mini-top">
+            <span className={data.connected ? "pulse" : "pulse offline"} />{" "}
+            {loading
+              ? "Connecting"
+              : data.connected
+                ? "Router online"
+                : "Router offline"}
+          </div>
+          <strong>ZTE MF293N</strong>
+          <span>{data.softwareVersion || "Reading firmware"}</span>
+          <div className="router-shape">
+            <i />
+            <i />
+            <i />
+          </div>
+        </div>
+        <div className="profile">
+          <span className="avatar">N</span>
+          <span>
+            <strong>{routerUsername}</strong>
+            <small>Developed by Nirmala</small>
+          </span>
+          <button className="profile-action" onClick={logout}>
+            Log out
+          </button>
+        </div>
       </aside>
 
       <section className="workspace" id="top">
-        <header className="topbar"><div><p className="eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p className="page-note">{copy.note}</p></div><div className="top-actions"><span className="speed-chip"><b>↓ {formatSpeed(data.downloadMbps)}</b><b>↑ {formatSpeed(data.uploadMbps)}</b><small>Mbps</small></span><span className={error ? "live-chip error" : loading ? "live-chip loading" : "live-chip"}><i />{error ? "Connection error" : loading ? "Connecting" : "Live device data"}</span><span className="updated">{data.updatedAt ? `Updated ${new Date(data.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : "Waiting for device"}</span><button className="refresh" onClick={() => loadStatus(true)}>Refresh <span aria-hidden="true">R</span></button></div></header>
-        {error && <div className="error-banner" role="alert"><strong>Router data unavailable</strong><span>{error}</span><button onClick={() => loadStatus(true)}>Try again</button></div>}
-        {!error && active === "Overview" && <Overview data={data} history={history} hidden={hidden} setHidden={setHidden} choose={choose} />}
-        {!error && active === "Network" && <><NetworkView data={data} hidden={hidden} setHidden={setHidden} requestAction={setPending} /><RadioControls requestAction={setPending} /></>}
-        {!error && active === "Wi-Fi" && <WifiView data={data} requestAction={setPending} />}
-        {!error && active === "Devices" && <DevicesView data={data} query={query} setQuery={setQuery} devices={visibleDevices} requestAction={setPending} />}
-        {!error && active === "Messages" && <MessagesView data={data} requestAction={setPending} />}
-        {!error && active === "System" && <SystemView data={data} hidden={hidden} setHidden={setHidden} requestAction={setPending} />}
-        {!error && active === "Admin Functions" && <AdminFunctions requestAction={setPending} />}
-        {!error && active === "Tunnels" && <TunnelsView requestAction={setPending} />}
-        {!error && active === "About" && <AboutView data={data} version={BEACON_VERSION} />}
+        <header className="topbar">
+          <div>
+            <p className="eyebrow">{copy.eyebrow}</p>
+            <h1>{copy.title}</h1>
+            <p className="page-note">{copy.note}</p>
+          </div>
+          <div className="top-actions">
+            <button
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            >
+              {theme === "light" ? "Dark" : "Light"}
+            </button>
+            <span className="speed-chip">
+              <b>↓ {formatSpeed(data.downloadMbps)}</b>
+              <b>↑ {formatSpeed(data.uploadMbps)}</b>
+              <small>Mbps</small>
+            </span>
+            <span
+              className={
+                error
+                  ? "live-chip error"
+                  : loading
+                    ? "live-chip loading"
+                    : "live-chip"
+              }
+            >
+              <i />
+              {error
+                ? "Connection error"
+                : loading
+                  ? "Connecting"
+                  : "Live device data"}
+            </span>
+            <span className="updated">
+              {data.updatedAt
+                ? `Updated ${new Date(data.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
+                : "Waiting for device"}
+            </span>
+            <button className="refresh" onClick={() => loadStatus(true)}>
+              Refresh <span aria-hidden="true">R</span>
+            </button>
+          </div>
+        </header>
+        {error && (
+          <div className="error-banner" role="alert">
+            <strong>Router data unavailable</strong>
+            <span>{error}</span>
+            <button onClick={() => loadStatus(true)}>Try again</button>
+          </div>
+        )}
+        {!error && active === "Overview" && (
+          <Overview
+            data={data}
+            history={history}
+            hidden={hidden}
+            setHidden={setHidden}
+            choose={choose}
+          />
+        )}
+        {!error && active === "Network" && (
+          <>
+            <NetworkView
+              data={data}
+              hidden={hidden}
+              setHidden={setHidden}
+              requestAction={setPending}
+            />
+            <RadioControls requestAction={setPending} />
+          </>
+        )}
+        {!error && active === "Wi-Fi" && (
+          <WifiView data={data} requestAction={setPending} />
+        )}
+        {!error && active === "Devices" && (
+          <DevicesView
+            data={data}
+            query={query}
+            setQuery={setQuery}
+            devices={visibleDevices}
+            requestAction={setPending}
+          />
+        )}
+        {!error && active === "Messages" && (
+          <MessagesView data={data} requestAction={setPending} />
+        )}
+        {!error && active === "System" && (
+          <SystemView
+            data={data}
+            hidden={hidden}
+            setHidden={setHidden}
+            requestAction={setPending}
+          />
+        )}
+        {!error && active === "Admin Functions" && (
+          <AdminFunctions requestAction={setPending} />
+        )}
+        {!error && active === "Tunnels" && (
+          <TunnelsView requestAction={setPending} />
+        )}
+        {!error && active === "About" && (
+          <AboutView data={data} version={BEACON_VERSION} />
+        )}
       </section>
-      {pending && <div className="modal-backdrop" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget&&!acting)setPending(null);}}><section className={pending.danger?"confirm-modal danger":"confirm-modal"} role="dialog" aria-modal="true" aria-labelledby="confirm-title"><span className="confirm-mark">{pending.danger?"!":"OK"}</span><p className="eyebrow">Review router change</p><h2 id="confirm-title">{pending.title}</h2><p>{pending.description}</p><div className="confirm-actions"><button disabled={acting} onClick={()=>setPending(null)}>Cancel</button><button className="confirm-primary" disabled={acting} onClick={applyAction}>{acting?"Applying...":pending.danger?"Confirm and continue":"Apply change"}</button></div></section></div>}
-      {notice && <div className="toast" role="status"><span>OK</span>{notice}</div>}
+      {pending && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !acting)
+              setPending(null);
+          }}
+        >
+          <section
+            className={
+              pending.danger ? "confirm-modal danger" : "confirm-modal"
+            }
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-title"
+          >
+            <span className="confirm-mark">{pending.danger ? "!" : "OK"}</span>
+            <p className="eyebrow">Review router change</p>
+            <h2 id="confirm-title">{pending.title}</h2>
+            <p>{pending.description}</p>
+            <div className="confirm-actions">
+              <button disabled={acting} onClick={() => setPending(null)}>
+                Cancel
+              </button>
+              <button
+                className="confirm-primary"
+                disabled={acting}
+                onClick={applyAction}
+              >
+                {acting
+                  ? "Applying..."
+                  : pending.danger
+                    ? "Confirm and continue"
+                    : "Apply change"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+      {notice && (
+        <div className="toast" role="status">
+          <span>OK</span>
+          {notice}
+        </div>
+      )}
     </main>
   );
 }
 
-function LoginScreen({checking,address,setAddress,username,setUsername,password,setPassword,error,loading,submit}:{checking:boolean;address:string;setAddress:(value:string)=>void;username:string;setUsername:(value:string)=>void;password:string;setPassword:(value:string)=>void;error:string;loading:boolean;submit:(event:FormEvent)=>void}) {
-  return <main className="login-shell"><section className="login-story"><span className="login-brand"><span className="brand-mark"><i/><i/><i/></span>beacon</span><div><p className="eyebrow light">MF293N control center</p><h1>Your network,<br/>under your control.</h1><p>Sign in directly to the router to manage live devices, Wi-Fi, carrier settings, messages and system controls.</p></div><div className="login-route"><span>Router</span><i/><span>Beacon local dashboard</span></div><a className="login-credit" href="https://github.com/barrylk/zte-mf293n-dashboard" target="_blank" rel="noreferrer">Developed by Nirmala · GitHub</a></section><section className="login-panel"><form className="login-card" onSubmit={submit}><p className="eyebrow">Secure local access</p><h2>{checking?"Checking session":"Sign in to your router"}</h2><p className="login-note">Your password is used only to authenticate with this router and is never stored permanently.</p><label><span>Router address</span><input value={address} onChange={(e)=>setAddress(e.target.value)} disabled={checking||loading}/></label><label><span>Username</span><input value={username} onChange={(e)=>setUsername(e.target.value)} autoComplete="username" disabled={checking||loading}/></label><label><span>Password</span><input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} autoComplete="current-password" autoFocus={!checking} disabled={checking||loading}/></label>{error&&<div className="login-error" role="alert">{error}</div>}<button className="login-submit" disabled={checking||loading||!username||!password}>{checking?"Checking...":loading?"Signing in...":"Open Beacon"}</button><small className="login-foot">Connection stays inside your local network.</small></form></section></main>;
+function LoginScreen({
+  checking,
+  address,
+  setAddress,
+  username,
+  setUsername,
+  password,
+  setPassword,
+  error,
+  loading,
+  submit,
+}: {
+  checking: boolean;
+  address: string;
+  setAddress: (value: string) => void;
+  username: string;
+  setUsername: (value: string) => void;
+  password: string;
+  setPassword: (value: string) => void;
+  error: string;
+  loading: boolean;
+  submit: (event: FormEvent) => void;
+}) {
+  return (
+    <main className="login-shell">
+      <section className="login-story">
+        <span className="login-brand">
+          <span className="brand-mark">
+            <i />
+            <i />
+            <i />
+          </span>
+          beacon
+        </span>
+        <div>
+          <p className="eyebrow light">MF293N control center</p>
+          <h1>
+            Your network,
+            <br />
+            under your control.
+          </h1>
+          <p>
+            Sign in directly to the router to manage live devices, Wi-Fi,
+            carrier settings, messages and system controls.
+          </p>
+        </div>
+        <div className="login-route">
+          <span>Router</span>
+          <i />
+          <span>Beacon local dashboard</span>
+        </div>
+        <a
+          className="login-credit"
+          href="https://github.com/barrylk/zte-mf293n-dashboard"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Developed by Nirmala · GitHub
+        </a>
+      </section>
+      <section className="login-panel">
+        <form className="login-card" onSubmit={submit}>
+          <p className="eyebrow">Secure local access</p>
+          <h2>{checking ? "Checking session" : "Sign in to your router"}</h2>
+          <p className="login-note">
+            Your password is used only to authenticate with this router and is
+            never stored permanently.
+          </p>
+          <label>
+            <span>Router address</span>
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              disabled={checking || loading}
+            />
+          </label>
+          <label>
+            <span>Username</span>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              disabled={checking || loading}
+            />
+          </label>
+          <label>
+            <span>Password</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              autoFocus={!checking}
+              disabled={checking || loading}
+            />
+          </label>
+          {error && (
+            <div className="login-error" role="alert">
+              {error}
+            </div>
+          )}
+          <button
+            className="login-submit"
+            disabled={checking || loading || !username || !password}
+          >
+            {checking
+              ? "Checking..."
+              : loading
+                ? "Signing in..."
+                : "Open Beacon"}
+          </button>
+          <small className="login-foot">
+            Connection stays inside your local network.
+          </small>
+        </form>
+      </section>
+    </main>
+  );
 }
 
-function Overview({ data, history, hidden, setHidden, choose }: { data: RouterData; history: number[]; hidden: boolean; setHidden: (value: boolean) => void; choose: (item: string) => void }) {
-  return <><div className="network-hero"><section className="hero-copy"><div className="status-line"><span className="status-dot" /> {data.connected ? "Internet connected" : "Internet disconnected"}</div><p className="hero-label">{data.provider} / {data.networkType} {data.band && data.band !== "--" ? `/ ${data.band}` : ""}</p><div className="speed-row"><div><span className="speed-arrow">D</span><strong>{formatSpeed(data.downloadMbps)}</strong><small>Mbps download</small></div><div><span className="speed-arrow up">U</span><strong>{formatSpeed(data.uploadMbps)}</strong><small>Mbps upload</small></div></div><div className="hero-foot"><span>WAN address</span><strong>{hidden ? maskIp(data.wanIp) : data.wanIp}</strong><button onClick={() => setHidden(!hidden)}>{hidden ? "Show" : "Hide"}</button></div></section><SignalCard data={data} /></div>
-    <div className="path-strip" aria-label="Network path"><div className="path-node"><i className="node-cloud" /><span><small>Carrier</small><strong>{data.provider}</strong></span></div><span className="path-line active"><b>{data.networkType}</b></span><div className="path-node router"><i className="node-router" /><span><small>Gateway</small><strong>MF293N</strong></span></div><span className="path-line active"><b>Wi-Fi</b></span><div className="path-node"><i className="node-device" /><span><small>Clients</small><strong>{data.devices.length} online</strong></span></div><button onClick={() => choose("Network")}>Inspect path</button></div>
-    <div className="content-grid"><section className="panel traffic-panel"><div className="panel-head"><div><p className="eyebrow">Since dashboard opened</p><h2>Live download activity</h2></div><span className="live-label">5 sec samples</span></div><ActivityChart history={history} /></section><section className="panel wifi-panel"><div className="panel-head compact"><div><p className="eyebrow">Wireless</p><h2>Wi-Fi</h2></div><span className="pill">Live</span></div><div className="wifi-name"><span>Network</span><strong>{data.ssid}</strong></div><div className="wifi-metrics"><div><span>Coverage</span><strong>{title(data.coverage)}</strong></div><div><span>Capacity</span><strong>{data.maxDevices} devices</strong></div></div><button className="wide-button" onClick={() => choose("Wi-Fi")}>View Wi-Fi <span>&gt;</span></button></section><section className="panel devices-panel"><div className="panel-head"><div><p className="eyebrow">Live clients</p><h2>Connected devices</h2></div><button className="text-button" onClick={() => choose("Devices")}>See all {data.devices.length} &gt;</button></div><DeviceList devices={data.devices} /></section><section className="panel health-panel"><div className="panel-head compact"><div><p className="eyebrow">System</p><h2>Router status</h2></div><span className="health-score live">{data.signalBars}/5</span></div><InfoRow label="Internet connection" value={data.connected ? "Connected" : "Disconnected"} good={data.connected} /><InfoRow label="Firmware" value={shortVersion(data.softwareVersion)} /><InfoRow label="Uptime" value={formatDuration(data.uptimeSeconds)} /><button className="wide-button muted" onClick={() => choose("System")}>System details <span>&gt;</span></button></section></div><HardwareTelemetry data={data}/></>;
+function Overview({
+  data,
+  history,
+  hidden,
+  setHidden,
+  choose,
+}: {
+  data: RouterData;
+  history: number[];
+  hidden: boolean;
+  setHidden: (value: boolean) => void;
+  choose: (item: string) => void;
+}) {
+  return (
+    <>
+      <div className="network-hero">
+        <section className="hero-copy">
+          <div className="status-line">
+            <span className="status-dot" />{" "}
+            {data.connected ? "Internet connected" : "Internet disconnected"}
+          </div>
+          <p className="hero-label">
+            {data.provider} / {data.networkType}{" "}
+            {data.band && data.band !== "--" ? `/ ${data.band}` : ""}
+          </p>
+          <div className="speed-row">
+            <div>
+              <span className="speed-arrow">D</span>
+              <strong>{formatSpeed(data.downloadMbps)}</strong>
+              <small>Mbps download</small>
+            </div>
+            <div>
+              <span className="speed-arrow up">U</span>
+              <strong>{formatSpeed(data.uploadMbps)}</strong>
+              <small>Mbps upload</small>
+            </div>
+          </div>
+          <div className="hero-foot">
+            <span>WAN address</span>
+            <strong>{hidden ? maskIp(data.wanIp) : data.wanIp}</strong>
+            <button onClick={() => setHidden(!hidden)}>
+              {hidden ? "Show" : "Hide"}
+            </button>
+          </div>
+        </section>
+        <SignalCard data={data} />
+      </div>
+      <div className="path-strip" aria-label="Network path">
+        <div className="path-node">
+          <i className="node-cloud" />
+          <span>
+            <small>Carrier</small>
+            <strong>{data.provider}</strong>
+          </span>
+        </div>
+        <span className="path-line active">
+          <b>{data.networkType}</b>
+        </span>
+        <div className="path-node router">
+          <i className="node-router" />
+          <span>
+            <small>Gateway</small>
+            <strong>MF293N</strong>
+          </span>
+        </div>
+        <span className="path-line active">
+          <b>Wi-Fi</b>
+        </span>
+        <div className="path-node">
+          <i className="node-device" />
+          <span>
+            <small>Clients</small>
+            <strong>{data.devices.length} online</strong>
+          </span>
+        </div>
+        <button onClick={() => choose("Network")}>Inspect path</button>
+      </div>
+      <div className="content-grid">
+        <section className="panel traffic-panel">
+          <div className="panel-head">
+            <div>
+              <p className="eyebrow">Since dashboard opened</p>
+              <h2>Live download activity</h2>
+            </div>
+            <span className="live-label">5 sec samples</span>
+          </div>
+          <ActivityChart history={history} />
+        </section>
+        <section className="panel wifi-panel">
+          <div className="panel-head compact">
+            <div>
+              <p className="eyebrow">Wireless</p>
+              <h2>Wi-Fi</h2>
+            </div>
+            <span className="pill">Live</span>
+          </div>
+          <div className="wifi-name">
+            <span>Network</span>
+            <strong>{data.ssid}</strong>
+          </div>
+          <div className="wifi-metrics">
+            <div>
+              <span>Coverage</span>
+              <strong>{title(data.coverage)}</strong>
+            </div>
+            <div>
+              <span>Capacity</span>
+              <strong>{data.maxDevices} devices</strong>
+            </div>
+          </div>
+          <button className="wide-button" onClick={() => choose("Wi-Fi")}>
+            View Wi-Fi <span>&gt;</span>
+          </button>
+        </section>
+        <section className="panel devices-panel">
+          <div className="panel-head">
+            <div>
+              <p className="eyebrow">Live clients</p>
+              <h2>Connected devices</h2>
+            </div>
+            <button className="text-button" onClick={() => choose("Devices")}>
+              See all {data.devices.length} &gt;
+            </button>
+          </div>
+          <DeviceList devices={data.devices} />
+        </section>
+        <section className="panel health-panel">
+          <div className="panel-head compact">
+            <div>
+              <p className="eyebrow">System</p>
+              <h2>Router status</h2>
+            </div>
+            <span className="health-score live">{data.signalBars}/5</span>
+          </div>
+          <InfoRow
+            label="Internet connection"
+            value={data.connected ? "Connected" : "Disconnected"}
+            good={data.connected}
+          />
+          <InfoRow
+            label="Firmware"
+            value={shortVersion(data.softwareVersion)}
+          />
+          <InfoRow label="Uptime" value={formatDuration(data.uptimeSeconds)} />
+          <button
+            className="wide-button muted"
+            onClick={() => choose("System")}
+          >
+            System details <span>&gt;</span>
+          </button>
+        </section>
+      </div>
+      <HardwareTelemetry data={data} />
+    </>
+  );
 }
 
-function HardwareTelemetry({data}:{data:RouterData}) {
-  const chains=data.antennaChains.length?data.antennaChains:[1,2,3,4].map((id)=>({id,rsrp:data.signalDbm,sinr:data.sinr}));
-  return <section className="telemetry-grid"><article className="panel antenna-panel"><div className="panel-head"><div><p className="eyebrow">Live modem chains</p><h2>Antenna signal</h2></div><span className="signal-pill"><i/><i/><i/><i className={data.signalBars<4?"dim":""}/><i className={data.signalBars<5?"dim":""}/></span></div><div className="antenna-chains">{chains.map((chain)=><div className="antenna-chain" key={chain.id}><span><b>RX{chain.id}</b><small>{chain.rsrp||"--"} dBm</small></span><div className="chain-bars">{[1,2,3,4,5].map((bar)=><i key={bar} className={bar<=barsFromRsrp(chain.rsrp)?"on":""}/>)}</div><strong>{chain.sinr||"--"} dB SINR</strong></div>)}</div><p className="hardware-note">The firmware reports four receive-chain readings. The enclosure provides two external cellular antenna ports; active chain mapping is controlled internally by the modem.</p></article><article className="panel power-panel"><div className="panel-head"><div><p className="eyebrow">Power telemetry</p><h2>{data.power.source}</h2></div><span className="power-mark">DC</span></div><div className="power-flow"><span>12V input</span><i/><span>Router board</span><i/><span>LTE + Wi-Fi</span></div><div className="detail-table"><InfoRow label="Power source" value={data.power.source}/><InfoRow label="Battery" value={data.power.batteryPresent?`${data.power.batteryPercent}%`:"Not installed"}/><InfoRow label="Live wattage" value={data.power.wattsAvailable?"Available":"No current sensor"}/><InfoRow label="Radio transmit power" value={data.power.txPower||"Not exposed"}/></div><p className="hardware-note">Voltage is known from the required 12V supply. Actual watts cannot be calculated because the board exposes no current sensor.</p></article></section>;
+function HardwareTelemetry({ data }: { data: RouterData }) {
+  const chains = data.antennaChains.length
+    ? data.antennaChains
+    : [1, 2, 3, 4].map((id) => ({ id, rsrp: data.signalDbm, sinr: data.sinr }));
+  return (
+    <section className="telemetry-grid">
+      <article className="panel antenna-panel">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Live modem chains</p>
+            <h2>Antenna signal</h2>
+          </div>
+          <span className="signal-pill">
+            <i />
+            <i />
+            <i />
+            <i className={data.signalBars < 4 ? "dim" : ""} />
+            <i className={data.signalBars < 5 ? "dim" : ""} />
+          </span>
+        </div>
+        <div className="antenna-chains">
+          {chains.map((chain) => (
+            <div className="antenna-chain" key={chain.id}>
+              <span>
+                <b>RX{chain.id}</b>
+                <small>{chain.rsrp || "--"} dBm</small>
+              </span>
+              <div className="chain-bars">
+                {[1, 2, 3, 4, 5].map((bar) => (
+                  <i
+                    key={bar}
+                    className={bar <= barsFromRsrp(chain.rsrp) ? "on" : ""}
+                  />
+                ))}
+              </div>
+              <strong>{chain.sinr || "--"} dB SINR</strong>
+            </div>
+          ))}
+        </div>
+        <p className="hardware-note">
+          The firmware reports four receive-chain readings. The enclosure
+          provides two external cellular antenna ports; active chain mapping is
+          controlled internally by the modem.
+        </p>
+      </article>
+      <article className="panel power-panel">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Power telemetry</p>
+            <h2>{data.power.source}</h2>
+          </div>
+          <span className="power-mark">DC</span>
+        </div>
+        <div className="power-flow">
+          <span>12V input</span>
+          <i />
+          <span>Router board</span>
+          <i />
+          <span>LTE + Wi-Fi</span>
+        </div>
+        <div className="detail-table">
+          <InfoRow label="Power source" value={data.power.source} />
+          <InfoRow
+            label="Battery"
+            value={
+              data.power.batteryPresent
+                ? `${data.power.batteryPercent}%`
+                : "Not installed"
+            }
+          />
+          <InfoRow
+            label="Live wattage"
+            value={
+              data.power.wattsAvailable ? "Available" : "No current sensor"
+            }
+          />
+          <InfoRow
+            label="Radio transmit power"
+            value={data.power.txPower || "Not exposed"}
+          />
+        </div>
+        <p className="hardware-note">
+          Voltage is known from the required 12V supply. Actual watts cannot be
+          calculated because the board exposes no current sensor.
+        </p>
+      </article>
+    </section>
+  );
 }
 
-function NetworkView({ data, hidden, setHidden, requestAction }: { data: RouterData; hidden: boolean; setHidden: (value: boolean) => void; requestAction: (action: PendingAction) => void }) {
-  const [profileName,setProfileName]=useState(data.apn.profileName); const [accessPoint,setAccessPoint]=useState(data.apn.accessPoint); const [authMode,setAuthMode]=useState(data.apn.authMode); const [apnUser,setApnUser]=useState(data.apn.username); const [apnPassword,setApnPassword]=useState("");
-  useEffect(()=>{setProfileName(data.apn.profileName);setAccessPoint(data.apn.accessPoint);setAuthMode(data.apn.authMode);setApnUser(data.apn.username);},[data.apn.profileName,data.apn.accessPoint,data.apn.authMode,data.apn.username]);
-  return <div className="detail-layout"><section className="panel feature-panel cellular"><div className="status-line"><span className="status-dot" /> {data.connected ? `${data.networkType} connected` : "Disconnected"}</div><p className="feature-kicker">Current cellular link</p><h2>{data.provider}</h2><p>{data.band || data.networkType} / channel {data.channel || "--"}</p><div className="radio-bars">{Array.from({length:12},(_,i)=><i key={i} style={{height:`${Math.max(12,Math.min(96,data.signalBars*18 + ((i*13)%24)-12))}%`}} />)}</div><div className="feature-foot"><span>Current signal</span><strong>{data.signalDbm} dBm</strong></div></section><section className="panel metric-panel"><p className="eyebrow">Live radio quality</p><h2>{signalQuality(data.signalDbm)}</h2><div className="metric-grid"><Metric label="SINR" value={number(data.sinr)} unit="dB" /><Metric label="RSRQ" value={number(data.rsrq)} unit="dB" /><Metric label="RSSI" value={number(data.rssi)} unit="dBm" /><Metric label="Channel" value={data.channel || "--"} unit="" /></div></section><section className="panel wide-panel"><div className="panel-head"><div><p className="eyebrow">Carrier profile</p><h2>APN settings</h2></div><span className="pill">Active profile</span></div><div className="settings-form"><label><span>Profile name</span><input value={profileName} onChange={(e)=>setProfileName(e.target.value)} /></label><label><span>Access point (APN)</span><input value={accessPoint} onChange={(e)=>setAccessPoint(e.target.value)} /></label><label><span>Authentication</span><select value={authMode} onChange={(e)=>setAuthMode(e.target.value)}><option value="none">None</option><option value="pap">PAP</option><option value="chap">CHAP</option></select></label><label><span>Username</span><input value={apnUser} onChange={(e)=>setApnUser(e.target.value)} /></label><label><span>Password</span><input type="password" value={apnPassword} onChange={(e)=>setApnPassword(e.target.value)} placeholder="Leave blank to keep current" /></label></div><div className="form-actions"><button className="subtle-action" onClick={()=>setHidden(!hidden)}>{hidden?"Reveal WAN address":"Protect WAN address"}</button><button className="wide-button fit" onClick={()=>requestAction({action:"apn_update",title:"Save carrier APN",description:"The router will save this APN as the active profile. Mobile data may disconnect briefly while the profile changes.",danger:true,payload:{profileName,accessPoint,authMode,username:apnUser,apnPassword,index:data.apn.index}})}>Save APN profile</button></div></section><section className="panel quick-panel"><p className="eyebrow">Connection controls</p><h2>{hidden?maskIp(data.wanIp):data.wanIp}</h2><p>Disconnect and reconnect the cellular session without restarting the router.</p><button className="wide-button" onClick={()=>requestAction({action:"network_reconnect",title:"Reconnect mobile data",description:"The router will briefly disconnect from the carrier and establish a new session. Internet access will be interrupted.",danger:true})}>Reconnect network</button></section></div>;
+function NetworkView({
+  data,
+  hidden,
+  setHidden,
+  requestAction,
+}: {
+  data: RouterData;
+  hidden: boolean;
+  setHidden: (value: boolean) => void;
+  requestAction: (action: PendingAction) => void;
+}) {
+  const [profileName, setProfileName] = useState(data.apn.profileName);
+  const [accessPoint, setAccessPoint] = useState(data.apn.accessPoint);
+  const [authMode, setAuthMode] = useState(data.apn.authMode);
+  const [apnUser, setApnUser] = useState(data.apn.username);
+  const [apnPassword, setApnPassword] = useState("");
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setProfileName(data.apn.profileName);
+      setAccessPoint(data.apn.accessPoint);
+      setAuthMode(data.apn.authMode);
+      setApnUser(data.apn.username);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [
+    data.apn.profileName,
+    data.apn.accessPoint,
+    data.apn.authMode,
+    data.apn.username,
+  ]);
+  const detected = APN_PRESETS.find((preset) =>
+    data.provider.toLowerCase().includes(preset.carrier.toLowerCase()),
+  );
+  function applyPreset(id: string) {
+    const preset = APN_PRESETS.find((item) => item.id === id);
+    if (!preset) return;
+    setProfileName(preset.label);
+    setAccessPoint(preset.apn);
+    setAuthMode("none");
+    setApnUser("");
+    setApnPassword("");
+  }
+  return (
+    <div className="detail-layout">
+      <section className="panel feature-panel cellular">
+        <div className="status-line">
+          <span className="status-dot" />{" "}
+          {data.connected ? `${data.networkType} connected` : "Disconnected"}
+        </div>
+        <p className="feature-kicker">Current cellular link</p>
+        <h2>{data.provider}</h2>
+        <p>
+          {data.band || data.networkType} / channel {data.channel || "--"}
+        </p>
+        <div className="radio-bars">
+          {Array.from({ length: 12 }, (_, i) => (
+            <i
+              key={i}
+              style={{
+                height: `${Math.max(12, Math.min(96, data.signalBars * 18 + ((i * 13) % 24) - 12))}%`,
+              }}
+            />
+          ))}
+        </div>
+        <div className="feature-foot">
+          <span>Current signal</span>
+          <strong>{data.signalDbm} dBm</strong>
+        </div>
+      </section>
+      <section className="panel metric-panel">
+        <p className="eyebrow">Live radio quality</p>
+        <h2>{signalQuality(data.signalDbm)}</h2>
+        <div className="metric-grid">
+          <Metric label="SINR" value={number(data.sinr)} unit="dB" />
+          <Metric label="RSRQ" value={number(data.rsrq)} unit="dB" />
+          <Metric label="RSSI" value={number(data.rssi)} unit="dBm" />
+          <Metric label="Channel" value={data.channel || "--"} unit="" />
+        </div>
+      </section>
+      <section className="panel wide-panel">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Carrier profile</p>
+            <h2>APN settings</h2>
+          </div>
+          <span className="pill">
+            {detected ? `${detected.carrier} detected` : "Manual profile"}
+          </span>
+        </div>
+        <div className="settings-form">
+          <label>
+            <span>Carrier preset</span>
+            <select
+              defaultValue=""
+              onChange={(e) => applyPreset(e.target.value)}
+            >
+              <option value="">Choose detected or local carrier</option>
+              {APN_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.label} — {preset.apn}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Profile name</span>
+            <input
+              value={profileName}
+              onChange={(e) => setProfileName(e.target.value)}
+            />
+          </label>
+          <label>
+            <span>Access point (APN)</span>
+            <input
+              value={accessPoint}
+              onChange={(e) => setAccessPoint(e.target.value)}
+            />
+          </label>
+          <label>
+            <span>Authentication</span>
+            <select
+              value={authMode}
+              onChange={(e) => setAuthMode(e.target.value)}
+            >
+              <option value="none">None</option>
+              <option value="pap">PAP</option>
+              <option value="chap">CHAP</option>
+            </select>
+          </label>
+          <label>
+            <span>Username</span>
+            <input
+              value={apnUser}
+              onChange={(e) => setApnUser(e.target.value)}
+            />
+          </label>
+          <label>
+            <span>Password</span>
+            <input
+              type="password"
+              value={apnPassword}
+              onChange={(e) => setApnPassword(e.target.value)}
+              placeholder="Leave blank to keep current"
+            />
+          </label>
+        </div>
+        <p className="advanced-wifi-note">
+          Beacon detects the serving carrier name and offers verified Sri Lankan
+          carrier presets. Manual APN entry remains available for roaming, MVNO
+          and international SIMs.
+        </p>
+        <div className="form-actions">
+          <button
+            className="subtle-action"
+            onClick={() => {
+              if (detected) applyPreset(detected.id);
+            }}
+            disabled={!detected}
+          >
+            Use detected carrier
+          </button>
+          <button
+            className="wide-button fit"
+            onClick={() =>
+              requestAction({
+                action: "apn_update",
+                title: "Save carrier APN",
+                description:
+                  "The router will save this APN as the active profile. Mobile data may disconnect briefly while the profile changes.",
+                danger: true,
+                payload: {
+                  profileName,
+                  accessPoint,
+                  authMode,
+                  username: apnUser,
+                  apnPassword,
+                  index: data.apn.index,
+                },
+              })
+            }
+          >
+            Save APN profile
+          </button>
+        </div>
+      </section>
+      <section className="panel quick-panel">
+        <p className="eyebrow">Connection controls</p>
+        <h2>{hidden ? maskIp(data.wanIp) : data.wanIp}</h2>
+        <p>
+          Disconnect and reconnect the cellular session without restarting the
+          router.
+        </p>
+        <button
+          className="wide-button"
+          onClick={() =>
+            requestAction({
+              action: "network_reconnect",
+              title: "Reconnect mobile data",
+              description:
+                "The router will briefly disconnect from the carrier and establish a new session. Internet access will be interrupted.",
+              danger: true,
+            })
+          }
+        >
+          Reconnect network
+        </button>
+      </section>
+    </div>
+  );
 }
 
-function WifiView({ data, requestAction }: { data: RouterData; requestAction: (action: PendingAction) => void }) {
-  const [ssid,setSsid]=useState(data.ssid); const [passphrase,setPassphrase]=useState(""); const [coverage,setCoverage]=useState(data.coverage); const [maxDevices,setMaxDevices]=useState(data.maxDevices || 32);
-  useEffect(()=>{setSsid(data.ssid);setCoverage(data.coverage);setMaxDevices(data.maxDevices||32);},[data.ssid,data.coverage,data.maxDevices]);
-  return <div className="detail-layout"><section className="panel feature-panel wifi-feature"><p className="eyebrow light">Primary network</p><h2>{data.ssid}</h2><p>{data.devices.length} connected client{data.devices.length===1?"":"s"} on the current wireless network.</p><div className="wifi-orbit"><span>Wi-Fi</span><i /><i /><i /></div><div className="feature-foot"><span>Security</span><strong>{formatAuth(data.authMode)}</strong></div></section><section className="panel metric-panel"><div className="panel-head compact"><div><p className="eyebrow">Coverage</p><h2>{title(coverage)} range</h2></div><span className="pill">Editable</span></div><div className="segment-control">{["short","medium","long"].map((item)=><button key={item} className={coverage===item?"selected":""} onClick={()=>setCoverage(item)}>{title(item)}</button>)}</div><p className="helper-text">Longer range uses more power and may increase interference.</p></section><section className="panel wide-panel"><div className="panel-head"><div><p className="eyebrow">Primary wireless network</p><h2>Wi-Fi settings</h2></div><strong className="capacity-number">{data.devices.length}/{data.maxDevices}</strong></div><div className="settings-form wifi-settings"><label><span>Network name (SSID)</span><input value={ssid} maxLength={32} onChange={(e)=>setSsid(e.target.value)} /></label><label><span>New password</span><input type="password" value={passphrase} onChange={(e)=>setPassphrase(e.target.value)} placeholder="Leave blank to keep current" /></label><label><span>Maximum devices</span><input type="number" min="1" max="32" value={maxDevices} onChange={(e)=>setMaxDevices(Number(e.target.value))} /></label></div><div className="capacity-track"><i style={{width:`${data.maxDevices ? Math.max(1,data.devices.length/data.maxDevices*100) : 0}%`}} /></div><button className="wide-button fit align-right" onClick={()=>requestAction({action:"wifi_update",title:"Apply Wi-Fi settings",description:"Changing the SSID or password will disconnect every wireless device. You may need to reconnect this computer using the new details.",danger:true,payload:{ssid,passphrase,coverage:`${coverage}_mode`,maxDevices}})}>Apply Wi-Fi settings</button></section><section className="panel quick-panel"><p className="eyebrow">Current network</p><h2>{formatAuth(data.authMode)}</h2><div className="detail-table"><InfoRow label="Connected clients" value={String(data.devices.length)} /><InfoRow label="Local gateway" value={data.lanIp} /><InfoRow label="Monthly traffic" value={formatBytes(data.monthlyReceivedBytes+data.monthlySentBytes)} /></div></section></div>;
+function WifiView({
+  data,
+  requestAction,
+}: {
+  data: RouterData;
+  requestAction: (action: PendingAction) => void;
+}) {
+  const [ssid, setSsid] = useState(data.ssid);
+  const [passphrase, setPassphrase] = useState("");
+  const [coverage, setCoverage] = useState(data.coverage);
+  const [maxDevices, setMaxDevices] = useState(data.maxDevices || 32);
+  const [mode, setMode] = useState(data.wifiAdvanced.mode);
+  const [channel, setChannel] = useState(data.wifiAdvanced.channel);
+  const [bandwidth, setBandwidth] = useState(data.wifiAdvanced.bandwidth);
+  const [countryCode, setCountryCode] = useState(data.wifiAdvanced.countryCode);
+  const [rate, setRate] = useState(data.wifiAdvanced.rate);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSsid(data.ssid);
+      setCoverage(data.coverage);
+      setMaxDevices(data.maxDevices || 32);
+      setMode(data.wifiAdvanced.mode);
+      setChannel(data.wifiAdvanced.channel);
+      setBandwidth(data.wifiAdvanced.bandwidth);
+      setCountryCode(data.wifiAdvanced.countryCode);
+      setRate(data.wifiAdvanced.rate);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [
+    data.ssid,
+    data.coverage,
+    data.maxDevices,
+    data.wifiAdvanced.mode,
+    data.wifiAdvanced.channel,
+    data.wifiAdvanced.bandwidth,
+    data.wifiAdvanced.countryCode,
+    data.wifiAdvanced.rate,
+  ]);
+  return (
+    <div className="detail-layout">
+      <section className="panel feature-panel wifi-feature">
+        <p className="eyebrow light">Primary network</p>
+        <h2>{data.ssid}</h2>
+        <p>
+          {data.devices.length} connected client
+          {data.devices.length === 1 ? "" : "s"} on the current wireless
+          network.
+        </p>
+        <div className="wifi-orbit">
+          <span>Wi-Fi</span>
+          <i />
+          <i />
+          <i />
+        </div>
+        <div className="feature-foot">
+          <span>Security</span>
+          <strong>{formatAuth(data.authMode)}</strong>
+        </div>
+      </section>
+      <section className="panel metric-panel">
+        <div className="panel-head compact">
+          <div>
+            <p className="eyebrow">Coverage</p>
+            <h2>{title(coverage)} range</h2>
+          </div>
+          <span className="pill">Safe maximum</span>
+        </div>
+        <div className="segment-control">
+          {["short", "medium", "long"].map((item) => (
+            <button
+              key={item}
+              className={coverage === item ? "selected" : ""}
+              onClick={() => setCoverage(item)}
+            >
+              {title(item)}
+            </button>
+          ))}
+        </div>
+        <p className="helper-text">
+          Long uses the strongest transmit profile exposed by the stock firmware
+          while preserving its hardware and region limits.
+        </p>
+      </section>
+      <section className="panel wide-panel">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Primary wireless network</p>
+            <h2>Wi-Fi settings</h2>
+          </div>
+          <strong className="capacity-number">
+            {data.devices.length}/{data.maxDevices}
+          </strong>
+        </div>
+        <div className="settings-form wifi-settings">
+          <label>
+            <span>Network name (SSID)</span>
+            <input
+              value={ssid}
+              maxLength={32}
+              onChange={(e) => setSsid(e.target.value)}
+            />
+          </label>
+          <label>
+            <span>New password</span>
+            <input
+              type="password"
+              value={passphrase}
+              onChange={(e) => setPassphrase(e.target.value)}
+              placeholder="Leave blank to keep current"
+            />
+          </label>
+          <label>
+            <span>Maximum devices</span>
+            <input
+              type="number"
+              min="1"
+              max="32"
+              value={maxDevices}
+              onChange={(e) => setMaxDevices(Number(e.target.value))}
+            />
+          </label>
+        </div>
+        <div className="capacity-track">
+          <i
+            style={{
+              width: `${data.maxDevices ? Math.max(1, (data.devices.length / data.maxDevices) * 100) : 0}%`,
+            }}
+          />
+        </div>
+        <button
+          className="wide-button fit align-right"
+          onClick={() =>
+            requestAction({
+              action: "wifi_update",
+              title: "Apply Wi-Fi settings",
+              description:
+                "Changing the SSID or password will disconnect every wireless device. You may need to reconnect this computer using the new details.",
+              danger: true,
+              payload: {
+                ssid,
+                passphrase,
+                coverage: `${coverage}_mode`,
+                maxDevices,
+              },
+            })
+          }
+        >
+          Apply Wi-Fi settings
+        </button>
+      </section>
+      <section className="panel quick-panel">
+        <p className="eyebrow">Current network</p>
+        <h2>{formatAuth(data.authMode)}</h2>
+        <div className="detail-table">
+          <InfoRow
+            label="Connected clients"
+            value={String(data.devices.length)}
+          />
+          <InfoRow label="Local gateway" value={data.lanIp} />
+          <InfoRow
+            label="Monthly traffic"
+            value={formatBytes(
+              data.monthlyReceivedBytes + data.monthlySentBytes,
+            )}
+          />
+        </div>
+      </section>
+      <section className="panel advanced-wifi">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Stock firmware radio controls</p>
+            <h2>Advanced 2.4 GHz mode</h2>
+          </div>
+          <span className="pill">802.11 b/g/n</span>
+        </div>
+        <div className="settings-form">
+          <label>
+            <span>Wireless mode</span>
+            <select value={mode} onChange={(e) => setMode(e.target.value)}>
+              <option value="0">802.11b only</option>
+              <option value="1">802.11g only</option>
+              <option value="2">802.11n only</option>
+              <option value="3">802.11b/g mixed</option>
+              <option value="4">802.11b/g/n mixed</option>
+            </select>
+          </label>
+          <label>
+            <span>Channel</span>
+            <select
+              value={channel}
+              onChange={(e) => setChannel(e.target.value)}
+            >
+              <option value="0">Auto</option>
+                  {Array.from({ length: 13 }, (_, index) => (
+                <option key={index + 1} value={String(index + 1)}>
+                  Channel {index + 1}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Channel width</span>
+            <select
+              value={bandwidth}
+              onChange={(e) => setBandwidth(e.target.value)}
+            >
+              <option value="0">20 MHz</option>
+              <option value="2">40 MHz</option>
+              <option value="1">20/40 MHz auto</option>
+            </select>
+          </label>
+          <label>
+            <span>Country code</span>
+            <input
+              value={countryCode}
+              maxLength={2}
+              onChange={(e) => setCountryCode(e.target.value.toUpperCase())}
+            />
+          </label>
+          <label>
+            <span>Data rate</span>
+            <select value={rate} onChange={(e) => setRate(e.target.value)}>
+              <option value="0">Auto / full negotiated speed</option>
+              <option value="65">65 Mbps fixed ceiling</option>
+              <option value="54">54 Mbps</option>
+              <option value="26">26 Mbps</option>
+              <option value="13">13 Mbps</option>
+            </select>
+          </label>
+        </div>
+        <p className="advanced-wifi-note">
+          Auto rate and 20/40 MHz use the hardware&apos;s full negotiated
+          capability. Country and channel validation prevent out-of-region radio
+          settings.
+        </p>
+        <button
+          className="wide-button fit align-right"
+          onClick={() =>
+            requestAction({
+              action: "wifi_advanced_update",
+              title: "Apply advanced Wi-Fi mode",
+              description:
+                "The router will restart its 2.4 GHz radio with the selected stock-firmware settings. Wireless clients will disconnect briefly.",
+              danger: true,
+              payload: {
+                mode,
+                channel,
+                bandwidth,
+                countryCode,
+                rate,
+                maxDevices,
+              },
+            })
+          }
+        >
+          Apply advanced mode
+        </button>
+      </section>
+    </div>
+  );
 }
 
-function DevicesView({ data, query, setQuery, devices, requestAction }: { data: RouterData; query: string; setQuery: (value: string) => void; devices: Device[]; requestAction: (action: PendingAction) => void }) {
-  function rename(device: Device){const hostname=window.prompt("New device name",device.name);if(hostname&&hostname.trim()&&hostname.trim()!==device.name)requestAction({action:"device_rename",title:"Rename device",description:`Rename ${device.name} to ${hostname.trim()} in the router device list.`,payload:{macAddress:device.macAddress,hostname:hostname.trim()}});}
-  return <div className="single-column"><section className="summary-row"><SummaryCard label="Online now" value={String(data.devices.length)} note="Router station list" /><SummaryCard label="Blocked" value={String(data.blockedDevices.length)} note="Wi-Fi deny list" /><SummaryCard label="Capacity" value={`${data.maxDevices ? Math.round(data.devices.length/data.maxDevices*100) : 0}%`} note={`${data.devices.length} of ${data.maxDevices}`} /></section><section className="panel device-manager"><div className="panel-head manager-head"><div><p className="eyebrow">Live station list</p><h2>Connected devices</h2></div><label className="search-box"><span className="sr-only">Search devices</span><input value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="Search devices" /></label></div><div className="device-table-head controls"><span>Device</span><span>Connection</span><span>Status</span><span>Controls</span></div>{devices.map((device)=><div className="device-table-row controls" key={device.macAddress}><span className="device-identity"><b className="device-mark">{device.mark}</b><span><strong>{device.name}</strong><small>{device.ipAddress}</small></span></span><span>{device.detail.split(" / ")[0]}</span><span className="device-activity"><i />{device.activity}</span><span className="row-actions"><button onClick={()=>rename(device)}>Rename</button><button className="block" onClick={()=>requestAction({action:"device_block",title:"Block device",description:`Block ${device.name} (${device.ipAddress}) from the Wi-Fi network. Its connection will stop immediately.`,danger:true,payload:{macAddress:device.macAddress,name:device.name,ipAddress:device.ipAddress}})}>Block</button></span></div>)}{devices.length===0&&<div className="empty-row">{query ? "No matching devices" : "No connected devices reported"}</div>}</section>{data.blockedDevices.length>0&&<section className="panel blocked-panel"><div className="panel-head"><div><p className="eyebrow">Access control</p><h2>Blocked devices</h2></div><span className="pill">{data.blockedDevices.length}</span></div>{data.blockedDevices.map((device)=><div className="blocked-row" key={device.macAddress}><span><strong>{device.name}</strong><small>{device.macAddress}</small></span><button onClick={()=>requestAction({action:"device_unblock",title:"Unblock device",description:`Allow ${device.name} to connect to Wi-Fi again.`,payload:{macAddress:device.macAddress,name:device.name}})}>Unblock</button></div>)}</section>}<TrafficControl devices={data.devices} requestAction={requestAction}/></div>;
+function DevicesView({
+  data,
+  query,
+  setQuery,
+  devices,
+  requestAction,
+}: {
+  data: RouterData;
+  query: string;
+  setQuery: (value: string) => void;
+  devices: Device[];
+  requestAction: (action: PendingAction) => void;
+}) {
+  function rename(device: Device) {
+    const hostname = window.prompt("New device name", device.name);
+    if (hostname && hostname.trim() && hostname.trim() !== device.name)
+      requestAction({
+        action: "device_rename",
+        title: "Rename device",
+        description: `Rename ${device.name} to ${hostname.trim()} in the router device list.`,
+        payload: { macAddress: device.macAddress, hostname: hostname.trim() },
+      });
+  }
+  return (
+    <div className="single-column">
+      <section className="summary-row">
+        <SummaryCard
+          label="Online now"
+          value={String(data.devices.length)}
+          note="Router station list"
+        />
+        <SummaryCard
+          label="Blocked"
+          value={String(data.blockedDevices.length)}
+          note="Wi-Fi deny list"
+        />
+        <SummaryCard
+          label="Capacity"
+          value={`${data.maxDevices ? Math.round((data.devices.length / data.maxDevices) * 100) : 0}%`}
+          note={`${data.devices.length} of ${data.maxDevices}`}
+        />
+      </section>
+      <section className="panel device-manager">
+        <div className="panel-head manager-head">
+          <div>
+            <p className="eyebrow">Live station list</p>
+            <h2>Connected devices</h2>
+          </div>
+          <label className="search-box">
+            <span className="sr-only">Search devices</span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search devices"
+            />
+          </label>
+        </div>
+        <div className="device-table-head controls">
+          <span>Device</span>
+          <span>Connection</span>
+          <span>Status</span>
+          <span>Controls</span>
+        </div>
+        {devices.map((device) => (
+          <div className="device-table-row controls" key={device.macAddress}>
+            <span className="device-identity">
+              <b className="device-mark">{device.mark}</b>
+              <span>
+                <strong>{device.name}</strong>
+                <small>{device.ipAddress}</small>
+              </span>
+            </span>
+            <span>{device.detail.split(" / ")[0]}</span>
+            <span className="device-activity">
+              <i />
+              {device.activity}
+            </span>
+            <span className="row-actions">
+              <button onClick={() => rename(device)}>Rename</button>
+              <button
+                className="block"
+                onClick={() =>
+                  requestAction({
+                    action: "device_block",
+                    title: "Block device",
+                    description: `Block ${device.name} (${device.ipAddress}) from the Wi-Fi network. Its connection will stop immediately.`,
+                    danger: true,
+                    payload: {
+                      macAddress: device.macAddress,
+                      name: device.name,
+                      ipAddress: device.ipAddress,
+                    },
+                  })
+                }
+              >
+                Block
+              </button>
+            </span>
+          </div>
+        ))}
+        {devices.length === 0 && (
+          <div className="empty-row">
+            {query ? "No matching devices" : "No connected devices reported"}
+          </div>
+        )}
+      </section>
+      {data.blockedDevices.length > 0 && (
+        <section className="panel blocked-panel">
+          <div className="panel-head">
+            <div>
+              <p className="eyebrow">Access control</p>
+              <h2>Blocked devices</h2>
+            </div>
+            <span className="pill">{data.blockedDevices.length}</span>
+          </div>
+          {data.blockedDevices.map((device) => (
+            <div className="blocked-row" key={device.macAddress}>
+              <span>
+                <strong>{device.name}</strong>
+                <small>{device.macAddress}</small>
+              </span>
+              <button
+                onClick={() =>
+                  requestAction({
+                    action: "device_unblock",
+                    title: "Unblock device",
+                    description: `Allow ${device.name} to connect to Wi-Fi again.`,
+                    payload: {
+                      macAddress: device.macAddress,
+                      name: device.name,
+                    },
+                  })
+                }
+              >
+                Unblock
+              </button>
+            </div>
+          ))}
+        </section>
+      )}
+      <TrafficControl devices={data.devices} requestAction={requestAction} />
+    </div>
+  );
 }
 
-type TrafficRule = { index:number; ipStart:string; ipEnd:string; uploadMax:number; downloadMax:number; enabled:boolean };
+type TrafficRule = {
+  index: number;
+  ipStart: string;
+  ipEnd: string;
+  uploadMax: number;
+  downloadMax: number;
+  enabled: boolean;
+};
 
-function TrafficControl({devices,requestAction}:{devices:Device[];requestAction:(action:PendingAction)=>void}) {
-  const [traffic,setTraffic]=useState<{enabled:boolean;uploadTotal:number;downloadTotal:number;rules:TrafficRule[]}|null>(null);
-  const [ip,setIp]=useState(devices[0]?.ipAddress||"");
-  const [upload,setUpload]=useState("1000");
-  const [download,setDownload]=useState("5000");
-  const [error,setError]=useState("");
-  async function load(){try{const response=await fetch("/api/router/traffic",{cache:"no-store"});const result=await response.json();if(!response.ok||!result.ok)throw new Error(result.error||"Unable to load speed limits");setTraffic(result);setError("");}catch(caught){setError(caught instanceof Error?caught.message:"Unable to load speed limits");}}
-  useEffect(()=>{const timer=window.setTimeout(load,0);return()=>window.clearTimeout(timer);},[]);
-  useEffect(()=>{if(!ip&&devices[0]?.ipAddress)setIp(devices[0].ipAddress);},[devices,ip]);
-  const refresh=()=>window.setTimeout(load,700);
-  const selectedDevice=devices.find((device)=>device.ipAddress===ip);
-  return <section className="panel traffic-control"><div className="panel-head"><div><p className="eyebrow">Firmware traffic control</p><h2>IP speed limits</h2></div><button className={traffic?.enabled?"traffic-switch enabled":"traffic-switch"} onClick={()=>requestAction({endpoint:"traffic",action:"traffic_toggle",title:traffic?.enabled?"Disable speed limits":"Enable speed limits",description:`${traffic?.enabled?"Disable":"Enable"} all configured IP speed-limit rules.`,payload:{enabled:!traffic?.enabled,uploadTotal:traffic?.uploadTotal||1000000,downloadTotal:traffic?.downloadTotal||1000000},onSuccess:refresh})}>{traffic?.enabled?"Enabled":"Disabled"}</button></div>{error&&<div className="login-error">{error}</div>}<div className="traffic-form"><label><span>Device or IP address</span><select value={ip} onChange={(event)=>setIp(event.target.value)}><option value="">Enter an IP below</option>{devices.map((device)=><option key={device.macAddress} value={device.ipAddress}>{device.name} — {device.ipAddress}</option>)}</select><input aria-label="IP address" value={ip} onChange={(event)=>setIp(event.target.value)} placeholder="192.168.1.100"/></label><label><span>Maximum upload</span><input type="number" min="10" max="1000000" value={upload} onChange={(event)=>setUpload(event.target.value)}/><small>Kbps</small></label><label><span>Maximum download</span><input type="number" min="10" max="1000000" value={download} onChange={(event)=>setDownload(event.target.value)}/><small>Kbps</small></label><button className="wide-button fit" disabled={!ip||Number(upload)<10||Number(download)<10} onClick={()=>requestAction({endpoint:"traffic",action:"traffic_upsert",title:"Set IP speed limit",description:`Limit ${selectedDevice?.name||ip} to ${download} Kbps download and ${upload} Kbps upload. Traffic control will be enabled.`,payload:{ip,uploadKbps:Number(upload),downloadKbps:Number(download)},onSuccess:refresh})}>Add speed limit</button></div><div className="speed-rule-list">{traffic?.rules.map((rule)=><div className="speed-rule" key={rule.index}><span><strong>{devices.find((device)=>device.ipAddress===rule.ipStart)?.name||rule.ipStart}</strong><small>{rule.ipStart}{rule.ipEnd!==rule.ipStart?` – ${rule.ipEnd}`:""}</small></span><span><small>Download</small><strong>{rule.downloadMax.toLocaleString()} Kbps</strong></span><span><small>Upload</small><strong>{rule.uploadMax.toLocaleString()} Kbps</strong></span><button onClick={()=>requestAction({endpoint:"traffic",action:"traffic_delete",title:"Delete speed limit",description:`Remove the speed limit for ${rule.ipStart}.`,danger:true,payload:{index:rule.index},onSuccess:refresh})}>Delete</button></div>)}{traffic&&!traffic.rules.length&&<div className="empty-row">No IP speed limits configured</div>}</div></section>;
+function TrafficControl({
+  devices,
+  requestAction,
+}: {
+  devices: Device[];
+  requestAction: (action: PendingAction) => void;
+}) {
+  const [traffic, setTraffic] = useState<{
+    enabled: boolean;
+    uploadTotal: number;
+    downloadTotal: number;
+    rules: TrafficRule[];
+  } | null>(null);
+  const [ip, setIp] = useState(devices[0]?.ipAddress || "");
+  const [upload, setUpload] = useState("1000");
+  const [download, setDownload] = useState("5000");
+  const [error, setError] = useState("");
+  async function load() {
+    try {
+      const response = await fetch("/api/router/traffic", {
+        cache: "no-store",
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok)
+        throw new Error(result.error || "Unable to load speed limits");
+      setTraffic(result);
+      setError("");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to load speed limits",
+      );
+    }
+  }
+  useEffect(() => {
+    const timer = window.setTimeout(load, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    if (!ip && devices[0]?.ipAddress) {
+      const timer = window.setTimeout(() => setIp(devices[0].ipAddress), 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, [devices, ip]);
+  const refresh = () => window.setTimeout(load, 700);
+  const selectedDevice = devices.find((device) => device.ipAddress === ip);
+  return (
+    <section className="panel traffic-control">
+      <div className="panel-head">
+        <div>
+          <p className="eyebrow">Firmware traffic control</p>
+          <h2>IP speed limits</h2>
+        </div>
+        <button
+          className={
+            traffic?.enabled ? "traffic-switch enabled" : "traffic-switch"
+          }
+          onClick={() =>
+            requestAction({
+              endpoint: "traffic",
+              action: "traffic_toggle",
+              title: traffic?.enabled
+                ? "Disable speed limits"
+                : "Enable speed limits",
+              description: `${traffic?.enabled ? "Disable" : "Enable"} all configured IP speed-limit rules.`,
+              payload: {
+                enabled: !traffic?.enabled,
+                uploadTotal: traffic?.uploadTotal || 1000000,
+                downloadTotal: traffic?.downloadTotal || 1000000,
+              },
+              onSuccess: refresh,
+            })
+          }
+        >
+          {traffic?.enabled ? "Enabled" : "Disabled"}
+        </button>
+      </div>
+      {error && <div className="login-error">{error}</div>}
+      <div className="traffic-form">
+        <label>
+          <span>Device or IP address</span>
+          <select value={ip} onChange={(event) => setIp(event.target.value)}>
+            <option value="">Enter an IP below</option>
+            {devices.map((device) => (
+              <option key={device.macAddress} value={device.ipAddress}>
+                {device.name} — {device.ipAddress}
+              </option>
+            ))}
+          </select>
+          <input
+            aria-label="IP address"
+            value={ip}
+            onChange={(event) => setIp(event.target.value)}
+            placeholder="192.168.1.100"
+          />
+        </label>
+        <label>
+          <span>Maximum upload</span>
+          <input
+            type="number"
+            min="10"
+            max="1000000"
+            value={upload}
+            onChange={(event) => setUpload(event.target.value)}
+          />
+          <small>Kbps</small>
+        </label>
+        <label>
+          <span>Maximum download</span>
+          <input
+            type="number"
+            min="10"
+            max="1000000"
+            value={download}
+            onChange={(event) => setDownload(event.target.value)}
+          />
+          <small>Kbps</small>
+        </label>
+        <button
+          className="wide-button fit"
+          disabled={!ip || Number(upload) < 10 || Number(download) < 10}
+          onClick={() =>
+            requestAction({
+              endpoint: "traffic",
+              action: "traffic_upsert",
+              title: "Set IP speed limit",
+              description: `Limit ${selectedDevice?.name || ip} to ${download} Kbps download and ${upload} Kbps upload. Traffic control will be enabled.`,
+              payload: {
+                ip,
+                uploadKbps: Number(upload),
+                downloadKbps: Number(download),
+              },
+              onSuccess: refresh,
+            })
+          }
+        >
+          Add speed limit
+        </button>
+      </div>
+      <div className="speed-rule-list">
+        {traffic?.rules.map((rule) => (
+          <div className="speed-rule" key={rule.index}>
+            <span>
+              <strong>
+                {devices.find((device) => device.ipAddress === rule.ipStart)
+                  ?.name || rule.ipStart}
+              </strong>
+              <small>
+                {rule.ipStart}
+                {rule.ipEnd !== rule.ipStart ? ` – ${rule.ipEnd}` : ""}
+              </small>
+            </span>
+            <span>
+              <small>Download</small>
+              <strong>{rule.downloadMax.toLocaleString()} Kbps</strong>
+            </span>
+            <span>
+              <small>Upload</small>
+              <strong>{rule.uploadMax.toLocaleString()} Kbps</strong>
+            </span>
+            <button
+              onClick={() =>
+                requestAction({
+                  endpoint: "traffic",
+                  action: "traffic_delete",
+                  title: "Delete speed limit",
+                  description: `Remove the speed limit for ${rule.ipStart}.`,
+                  danger: true,
+                  payload: { index: rule.index },
+                  onSuccess: refresh,
+                })
+              }
+            >
+              Delete
+            </button>
+          </div>
+        ))}
+        {traffic && !traffic.rules.length && (
+          <div className="empty-row">No IP speed limits configured</div>
+        )}
+      </div>
+    </section>
+  );
 }
 
-function MessagesView({ data, requestAction }: { data: RouterData; requestAction: (action: PendingAction) => void }) {
-  const [messages,setMessages]=useState<SmsMessage[]>([]),[loading,setLoading]=useState(true),[loadError,setLoadError]=useState("");
-  const [number,setNumber]=useState(""),[message,setMessage]=useState(""),[ussd,setUssd]=useState(""),[ussdResult,setUssdResult]=useState("");
-  async function load(){setLoading(true);try{const response=await fetch("/api/router/communications",{cache:"no-store"});const result=await response.json();if(!response.ok||!result.ok)throw new Error(result.error||"Unable to load messages");setMessages(result.messages||[]);setLoadError("");}catch(caught){setLoadError(caught instanceof Error?caught.message:"Unable to load messages");}finally{setLoading(false);}}
-  useEffect(()=>{const timer=window.setTimeout(load,0);return()=>window.clearTimeout(timer);},[]);
-  const refresh=()=>window.setTimeout(load,800);
-  return <div className="communications-layout"><section className="panel sms-inbox"><div className="panel-head"><div><p className="eyebrow">SIM and router storage</p><h2>SMS inbox</h2></div><button className="text-button" onClick={load}>{loading?"Loading...":"Refresh"}</button></div>{loadError&&<div className="login-error">{loadError}</div>}<div className="sms-list">{messages.map((item)=><article className={item.unread?"sms-item unread":"sms-item"} key={item.id}><div className="sms-meta"><strong>{item.number}</strong><span>{item.time}</span></div><p>{item.content}</p><div className="row-actions">{item.unread&&<button onClick={()=>requestAction({endpoint:"communications",action:"sms_read",title:"Mark message as read",description:`Mark the message from ${item.number} as read on the router.`,payload:{id:item.id},onSuccess:refresh})}>Mark read</button>}<button className="block" onClick={()=>requestAction({endpoint:"communications",action:"sms_delete",title:"Delete SMS",description:`Permanently delete this message from ${item.number}.`,danger:true,payload:{id:item.id},onSuccess:refresh})}>Delete</button></div></article>)}{!loading&&!messages.length&&<div className="empty-row">No stored messages</div>}</div></section><section className="panel compose-panel"><p className="eyebrow">New message</p><h2>Send SMS</h2><label><span>Recipient</span><input value={number} onChange={(e)=>setNumber(e.target.value)} placeholder="Mobile number"/></label><label><span>Message</span><textarea value={message} onChange={(e)=>setMessage(e.target.value)} maxLength={765} placeholder="Type a message"/></label><button className="wide-button" disabled={!number||!message} onClick={()=>requestAction({endpoint:"communications",action:"sms_send",title:"Send SMS",description:`Send this message to ${number} using the router SIM. Carrier messaging charges may apply.`,danger:true,payload:{number,message},onSuccess:()=>{setMessage("");refresh();}})}>Review and send</button></section><section className="panel ussd-panel"><div><p className="eyebrow">Carrier service</p><h2>USSD terminal</h2><p>Run balance checks and carrier menus through the installed SIM.</p></div><div className="ussd-entry"><input value={ussd} onChange={(e)=>setUssd(e.target.value)} placeholder="Example: *100#"/><button disabled={!ussd} onClick={()=>requestAction({endpoint:"communications",action:"ussd_send",title:"Run USSD request",description:`Send ${ussd} to the mobile network.`,payload:{command:ussd},onSuccess:(result)=>{const response=result.response as {content?:string}|undefined;setUssdResult(response?.content||"Request completed without text");}})}>Send</button></div>{ussdResult&&<div className="ussd-response"><span>Network response</span><p>{ussdResult}</p><div className="ussd-entry"><input value={ussd} onChange={(e)=>setUssd(e.target.value)} placeholder="Reply"/><button onClick={()=>requestAction({endpoint:"communications",action:"ussd_reply",title:"Reply to USSD menu",description:"Send this reply to the active carrier menu.",payload:{command:ussd},onSuccess:(result)=>{const response=result.response as {content?:string}|undefined;setUssdResult(response?.content||"Request completed");}})}>Reply</button><button className="block" onClick={()=>requestAction({endpoint:"communications",action:"ussd_cancel",title:"End USSD session",description:"Cancel the active USSD session.",payload:{},onSuccess:()=>setUssdResult("")})}>End</button></div></div>}<small>{data.provider} / {data.networkType}</small></section></div>;
+function MessagesView({
+  data,
+  requestAction,
+}: {
+  data: RouterData;
+  requestAction: (action: PendingAction) => void;
+}) {
+  const [messages, setMessages] = useState<SmsMessage[]>([]),
+    [loading, setLoading] = useState(true),
+    [loadError, setLoadError] = useState("");
+  const [number, setNumber] = useState(""),
+    [message, setMessage] = useState(""),
+    [ussd, setUssd] = useState(""),
+    [ussdResult, setUssdResult] = useState("");
+  async function load() {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/router/communications", {
+        cache: "no-store",
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok)
+        throw new Error(result.error || "Unable to load messages");
+      setMessages(result.messages || []);
+      setLoadError("");
+    } catch (caught) {
+      setLoadError(
+        caught instanceof Error ? caught.message : "Unable to load messages",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    const timer = window.setTimeout(load, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+  const refresh = () => window.setTimeout(load, 800);
+  return (
+    <div className="communications-layout">
+      <section className="panel sms-inbox">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">SIM and router storage</p>
+            <h2>SMS inbox</h2>
+          </div>
+          <button className="text-button" onClick={load}>
+            {loading ? "Loading..." : "Refresh"}
+          </button>
+        </div>
+        {loadError && <div className="login-error">{loadError}</div>}
+        <div className="sms-list">
+          {messages.map((item) => (
+            <article
+              className={item.unread ? "sms-item unread" : "sms-item"}
+              key={item.id}
+            >
+              <div className="sms-meta">
+                <strong>{item.number}</strong>
+                <span>{item.time}</span>
+              </div>
+              <p>{item.content}</p>
+              <div className="row-actions">
+                {item.unread && (
+                  <button
+                    onClick={() =>
+                      requestAction({
+                        endpoint: "communications",
+                        action: "sms_read",
+                        title: "Mark message as read",
+                        description: `Mark the message from ${item.number} as read on the router.`,
+                        payload: { id: item.id },
+                        onSuccess: refresh,
+                      })
+                    }
+                  >
+                    Mark read
+                  </button>
+                )}
+                <button
+                  className="block"
+                  onClick={() =>
+                    requestAction({
+                      endpoint: "communications",
+                      action: "sms_delete",
+                      title: "Delete SMS",
+                      description: `Permanently delete this message from ${item.number}.`,
+                      danger: true,
+                      payload: { id: item.id },
+                      onSuccess: refresh,
+                    })
+                  }
+                >
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))}
+          {!loading && !messages.length && (
+            <div className="empty-row">No stored messages</div>
+          )}
+        </div>
+      </section>
+      <section className="panel compose-panel">
+        <p className="eyebrow">New message</p>
+        <h2>Send SMS</h2>
+        <label>
+          <span>Recipient</span>
+          <input
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+            placeholder="Mobile number"
+          />
+        </label>
+        <label>
+          <span>Message</span>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            maxLength={765}
+            placeholder="Type a message"
+          />
+        </label>
+        <button
+          className="wide-button"
+          disabled={!number || !message}
+          onClick={() =>
+            requestAction({
+              endpoint: "communications",
+              action: "sms_send",
+              title: "Send SMS",
+              description: `Send this message to ${number} using the router SIM. Carrier messaging charges may apply.`,
+              danger: true,
+              payload: { number, message },
+              onSuccess: () => {
+                setMessage("");
+                refresh();
+              },
+            })
+          }
+        >
+          Review and send
+        </button>
+      </section>
+      <section className="panel ussd-panel">
+        <div>
+          <p className="eyebrow">Carrier service</p>
+          <h2>USSD terminal</h2>
+          <p>Run balance checks and carrier menus through the installed SIM.</p>
+        </div>
+        <div className="ussd-entry">
+          <input
+            value={ussd}
+            onChange={(e) => setUssd(e.target.value)}
+            placeholder="Example: *100#"
+          />
+          <button
+            disabled={!ussd}
+            onClick={() =>
+              requestAction({
+                endpoint: "communications",
+                action: "ussd_send",
+                title: "Run USSD request",
+                description: `Send ${ussd} to the mobile network.`,
+                payload: { command: ussd },
+                onSuccess: (result) => {
+                  const response = result.response as
+                    | { content?: string }
+                    | undefined;
+                  setUssdResult(
+                    response?.content || "Request completed without text",
+                  );
+                },
+              })
+            }
+          >
+            Send
+          </button>
+        </div>
+        {ussdResult && (
+          <div className="ussd-response">
+            <span>Network response</span>
+            <p>{ussdResult}</p>
+            <div className="ussd-entry">
+              <input
+                value={ussd}
+                onChange={(e) => setUssd(e.target.value)}
+                placeholder="Reply"
+              />
+              <button
+                onClick={() =>
+                  requestAction({
+                    endpoint: "communications",
+                    action: "ussd_reply",
+                    title: "Reply to USSD menu",
+                    description: "Send this reply to the active carrier menu.",
+                    payload: { command: ussd },
+                    onSuccess: (result) => {
+                      const response = result.response as
+                        | { content?: string }
+                        | undefined;
+                      setUssdResult(response?.content || "Request completed");
+                    },
+                  })
+                }
+              >
+                Reply
+              </button>
+              <button
+                className="block"
+                onClick={() =>
+                  requestAction({
+                    endpoint: "communications",
+                    action: "ussd_cancel",
+                    title: "End USSD session",
+                    description: "Cancel the active USSD session.",
+                    payload: {},
+                    onSuccess: () => setUssdResult(""),
+                  })
+                }
+              >
+                End
+              </button>
+            </div>
+          </div>
+        )}
+        <small>
+          {data.provider} / {data.networkType}
+        </small>
+      </section>
+    </div>
+  );
 }
 
-function RadioControls({requestAction}:{requestAction:(action:PendingAction)=>void}){
-  const [radio,setRadio]=useState<{selectedBands:string[];availableBands:string[];current:{band:string;channel:string;pci:string;cellId:string};cellLockSupported:boolean;neighborScanSupported:boolean;cellLockReason:string}|null>(null),[bands,setBands]=useState<string[]>([]),[error,setError]=useState("");
-  async function load(){try{const response=await fetch("/api/router/radio",{cache:"no-store"});const result=await response.json();if(!response.ok||!result.ok)throw new Error(result.error||"Unable to load radio controls");setRadio(result);setBands(result.selectedBands||[]);setError("");}catch(caught){setError(caught instanceof Error?caught.message:"Unable to load radio controls");}}
-  useEffect(()=>{const timer=window.setTimeout(load,0);return()=>window.clearTimeout(timer);},[]);function toggle(band:string){setBands((current)=>current.includes(band)?current.filter((item)=>item!==band):[...current,band]);}
-  return <div className="radio-control-grid"><section className="panel band-panel"><div className="panel-head"><div><p className="eyebrow">Verified firmware control</p><h2>LTE band selection</h2></div><span className="pill">{radio?`${bands.length} selected`:"Loading"}</span></div>{error&&<div className="login-error">{error}</div>}<div className="band-options">{(radio?.availableBands||["3","5","38","41"]).map((band)=><label key={band} className={bands.includes(band)?"selected":""}><input type="checkbox" checked={bands.includes(band)} onChange={()=>toggle(band)}/><span>Band {band}</span></label>)}</div><p className="helper-text">Beacon decodes the router&apos;s combined band bitmask, disconnects briefly, applies the new mask, verifies the value, then reconnects.</p><button className="wide-button fit" disabled={!bands.length} onClick={()=>requestAction({endpoint:"radio",action:"band_update",title:"Apply LTE band selection",description:`Restrict the modem to LTE band${bands.length===1?"":"s"} ${bands.join(", ")}. Mobile data will disconnect briefly and the reported mask will be verified.`,danger:true,payload:{bands},onSuccess:()=>window.setTimeout(load,1600)})}>Apply band selection</button></section><section className="panel cell-panel"><p className="eyebrow">Serving cell</p><h2>Cell identity</h2><div className="detail-table"><InfoRow label="Active band" value={radio?.current.band||"--"}/><InfoRow label="EARFCN / channel" value={radio?.current.channel||"--"}/><InfoRow label="PCI" value={radio?.current.pci||"--"}/><InfoRow label="Cell ID" value={radio?.current.cellId||"--"}/></div><div className="cell-lock-note"><strong>{radio?.neighborScanSupported?"Neighbor scan available":"Neighbor scan and cell lock unavailable"}</strong><p>{radio?.cellLockReason||"Checking firmware support..."}</p></div></section></div>;
+function RadioControls({
+  requestAction,
+}: {
+  requestAction: (action: PendingAction) => void;
+}) {
+  const [radio, setRadio] = useState<{
+      selectedBands: string[];
+      availableBands: string[];
+      current: { band: string; channel: string; pci: string; cellId: string };
+      cellLockSupported: boolean;
+      neighborScanSupported: boolean;
+      cellLockReason: string;
+    } | null>(null),
+    [bands, setBands] = useState<string[]>([]),
+    [error, setError] = useState("");
+  async function load() {
+    try {
+      const response = await fetch("/api/router/radio", { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok || !result.ok)
+        throw new Error(result.error || "Unable to load radio controls");
+      setRadio(result);
+      setBands(result.selectedBands || []);
+      setError("");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to load radio controls",
+      );
+    }
+  }
+  useEffect(() => {
+    const timer = window.setTimeout(load, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+  function toggle(band: string) {
+    setBands((current) =>
+      current.includes(band)
+        ? current.filter((item) => item !== band)
+        : [...current, band],
+    );
+  }
+  return (
+    <div className="radio-control-grid">
+      <section className="panel band-panel">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Verified firmware control</p>
+            <h2>LTE band selection</h2>
+          </div>
+          <span className="pill">
+            {radio ? `${bands.length} selected` : "Loading"}
+          </span>
+        </div>
+        {error && <div className="login-error">{error}</div>}
+        <div className="band-options">
+          {(radio?.availableBands || ["3", "5", "38", "41"]).map((band) => (
+            <label
+              key={band}
+              className={bands.includes(band) ? "selected" : ""}
+            >
+              <input
+                type="checkbox"
+                checked={bands.includes(band)}
+                onChange={() => toggle(band)}
+              />
+              <span>Band {band}</span>
+            </label>
+          ))}
+        </div>
+        <p className="helper-text">
+          Beacon decodes the router&apos;s combined band bitmask, disconnects
+          briefly, applies the new mask, verifies the value, then reconnects.
+        </p>
+        <button
+          className="wide-button fit"
+          disabled={!bands.length}
+          onClick={() =>
+            requestAction({
+              endpoint: "radio",
+              action: "band_update",
+              title: "Apply LTE band selection",
+              description: `Restrict the modem to LTE band${bands.length === 1 ? "" : "s"} ${bands.join(", ")}. Mobile data will disconnect briefly and the reported mask will be verified.`,
+              danger: true,
+              payload: { bands },
+              onSuccess: () => window.setTimeout(load, 1600),
+            })
+          }
+        >
+          Apply band selection
+        </button>
+      </section>
+      <section className="panel cell-panel">
+        <p className="eyebrow">Serving cell</p>
+        <h2>Cell identity</h2>
+        <div className="detail-table">
+          <InfoRow label="Active band" value={radio?.current.band || "--"} />
+          <InfoRow
+            label="EARFCN / channel"
+            value={radio?.current.channel || "--"}
+          />
+          <InfoRow label="PCI" value={radio?.current.pci || "--"} />
+          <InfoRow label="Cell ID" value={radio?.current.cellId || "--"} />
+        </div>
+        <div className="cell-lock-note">
+          <strong>
+            {radio?.neighborScanSupported
+              ? "Neighbor scan available"
+              : "Neighbor scan and cell lock unavailable"}
+          </strong>
+          <p>{radio?.cellLockReason || "Checking firmware support..."}</p>
+        </div>
+      </section>
+    </div>
+  );
 }
 
-function SystemView({ data, hidden, setHidden, requestAction }: { data: RouterData; hidden: boolean; setHidden: (value: boolean) => void; requestAction: (action: PendingAction) => void }) {
-  return <div className="detail-layout system-layout">
-    <section className="panel feature-panel system-feature"><p className="eyebrow light">Router</p><h2>ZTE MF293N</h2><p>{data.provider} {data.networkType} gateway</p><div className="system-router"><i /><i /><i /><b /></div><div className="feature-foot"><span>Connection</span><strong>{data.connected ? "Online" : "Offline"}</strong></div></section>
-    <section className="panel metric-panel"><p className="eyebrow">Software</p><h2>Firmware status</h2><div className="detail-table"><InfoRow label="Installed" value={data.softwareVersion} /><InfoRow label="Web UI" value={data.webVersion || "Not reported"} /><InfoRow label="Update method" value="Carrier OTA" /></div><button className="subtle-action" onClick={()=>requestAction({action:"ota_check",title:"Check for carrier update",description:"Ask the router to contact its configured carrier update service. This will not install an update automatically."})}>Check for updates</button></section>
-    <SystemResources/>
-    <section className="panel wide-panel"><div className="panel-head"><div><p className="eyebrow">Device identity</p><h2>Hardware information</h2></div><button className="text-button" onClick={() => setHidden(!hidden)}>{hidden?"Show":"Hide"} protected values</button></div><div className="detail-table two-col"><InfoRow label="Hardware version" value={data.hardwareVersion} /><InfoRow label="Local address" value={data.lanIp} /><InfoRow label="Device identifier" value={hidden ? maskId(data.imei) : data.imei} /><InfoRow label="Current uptime" value={formatDuration(data.uptimeSeconds)} /></div></section>
-    <section className="panel quick-panel danger-safe"><p className="eyebrow">Maintenance</p><h2>System actions</h2><p>These controls act directly on the router and always require confirmation.</p><div className="stack-actions"><button className="wide-button muted" onClick={()=>requestAction({action:"clear_traffic",title:"Clear traffic counters",description:"Reset the router's current traffic statistics to zero. This cannot be undone.",danger:true})}>Clear traffic counters</button><button className="wide-button danger-button" onClick={()=>requestAction({action:"restart",title:"Restart router",description:"Restart the MF293N now. Wi-Fi and internet access will be unavailable for several minutes.",danger:true})}>Restart router</button></div></section>
-  </div>;
+function SystemView({
+  data,
+  hidden,
+  setHidden,
+  requestAction,
+}: {
+  data: RouterData;
+  hidden: boolean;
+  setHidden: (value: boolean) => void;
+  requestAction: (action: PendingAction) => void;
+}) {
+  return (
+    <div className="detail-layout system-layout">
+      <section className="panel feature-panel system-feature">
+        <p className="eyebrow light">Router</p>
+        <h2>ZTE MF293N</h2>
+        <p>
+          {data.provider} {data.networkType} gateway
+        </p>
+        <div className="system-router">
+          <i />
+          <i />
+          <i />
+          <b />
+        </div>
+        <div className="feature-foot">
+          <span>Connection</span>
+          <strong>{data.connected ? "Online" : "Offline"}</strong>
+        </div>
+      </section>
+      <section className="panel metric-panel">
+        <p className="eyebrow">Software</p>
+        <h2>Firmware status</h2>
+        <div className="detail-table">
+          <InfoRow label="Installed" value={data.softwareVersion} />
+          <InfoRow label="Web UI" value={data.webVersion || "Not reported"} />
+          <InfoRow label="Update method" value="Carrier OTA" />
+        </div>
+        <button
+          className="subtle-action"
+          onClick={() =>
+            requestAction({
+              action: "ota_check",
+              title: "Check for carrier update",
+              description:
+                "Ask the router to contact its configured carrier update service. This will not install an update automatically.",
+            })
+          }
+        >
+          Check for updates
+        </button>
+      </section>
+      <SystemResources />
+      <section className="panel wide-panel">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Device identity</p>
+            <h2>Hardware information</h2>
+          </div>
+          <button className="text-button" onClick={() => setHidden(!hidden)}>
+            {hidden ? "Show" : "Hide"} protected values
+          </button>
+        </div>
+        <div className="detail-table two-col">
+          <InfoRow label="Hardware version" value={data.hardwareVersion} />
+          <InfoRow label="Local address" value={data.lanIp} />
+          <InfoRow
+            label="Device identifier"
+            value={hidden ? maskId(data.imei) : data.imei}
+          />
+          <InfoRow
+            label="Current uptime"
+            value={formatDuration(data.uptimeSeconds)}
+          />
+        </div>
+      </section>
+      <section className="panel quick-panel danger-safe">
+        <p className="eyebrow">Maintenance</p>
+        <h2>System actions</h2>
+        <p>
+          These controls act directly on the router and always require
+          confirmation.
+        </p>
+        <div className="stack-actions">
+          <button
+            className="wide-button muted"
+            onClick={() =>
+              requestAction({
+                action: "clear_traffic",
+                title: "Clear traffic counters",
+                description:
+                  "Reset the router's current traffic statistics to zero. This cannot be undone.",
+                danger: true,
+              })
+            }
+          >
+            Clear traffic counters
+          </button>
+          <button
+            className="wide-button danger-button"
+            onClick={() =>
+              requestAction({
+                action: "restart",
+                title: "Restart router",
+                description:
+                  "Restart the MF293N now. Wi-Fi and internet access will be unavailable for several minutes.",
+                danger: true,
+              })
+            }
+          >
+            Restart router
+          </button>
+        </div>
+      </section>
+    </div>
+  );
 }
 
 function useSystemTelemetry() {
-  const [telemetry,setTelemetry]=useState<SystemTelemetry|null>(null);
-  const [available,setAvailable]=useState(true);
-  useEffect(()=>{let mounted=true;async function load(){try{const response=await fetch(`/beacon-system.json?t=${Date.now()}`,{cache:"no-store"});if(!response.ok)throw new Error("Device agent unavailable");const value=await response.json();if(mounted){setTelemetry(value);setAvailable(true);}}catch{if(mounted)setAvailable(false);}}load();const timer=window.setInterval(load,3000);return()=>{mounted=false;window.clearInterval(timer);};},[]);
-  return {telemetry,available};
+  const [telemetry, setTelemetry] = useState<SystemTelemetry | null>(null);
+  const [available, setAvailable] = useState(true);
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const response = await fetch(`/beacon-system.json?t=${Date.now()}`, {
+          cache: "no-store",
+        });
+        if (!response.ok) throw new Error("Device agent unavailable");
+        const value = await response.json();
+        if (mounted) {
+          setTelemetry(value);
+          setAvailable(true);
+        }
+      } catch {
+        if (mounted) setAvailable(false);
+      }
+    }
+    load();
+    const timer = window.setInterval(load, 3000);
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+  return { telemetry, available };
 }
 
 function SystemResources() {
-  const {telemetry,available}=useSystemTelemetry();
-  const resources=telemetry ? [
-    {name:"CPU",value:telemetry.cpu.percent,detail:`Load ${telemetry.cpu.load1.toFixed(2)}`},
-    {name:"RAM",value:telemetry.memory.percent,detail:`${formatBinaryKb(telemetry.memory.usedKb)} / ${formatBinaryKb(telemetry.memory.totalKb)}`},
-    {name:"Storage",value:telemetry.storage.percent,detail:`${formatBinaryKb(telemetry.storage.usedKb)} / ${formatBinaryKb(telemetry.storage.totalKb)}`},
-  ] : [];
-  return <section className="panel resource-panel"><div className="panel-head"><div><p className="eyebrow">Live kernel telemetry</p><h2>Resource usage</h2></div><span className={available?"root-badge":"pill"}>{available?"LIVE":"DEVICE ONLY"}</span></div>{telemetry?<><div className="resource-grid">{resources.map((item)=><article className="resource-meter" key={item.name}><div className="resource-ring" style={{"--usage":`${Math.min(100,Math.max(0,item.value))*3.6}deg`} as CSSProperties}><span><strong>{item.value}%</strong><small>{item.name}</small></span></div><p>{item.detail}</p></article>)}</div><div className="resource-foot"><span>Free RAM <strong>{formatBinaryKb(telemetry.memory.availableKb)}</strong></span><span>Free writable flash <strong>{formatBinaryKb(telemetry.storage.freeKb)}</strong></span><span>Agent update <strong>{new Date(telemetry.updatedAt*1000).toLocaleTimeString()}</strong></span></div></>:<p className="agent-unavailable">Live CPU, RAM and writable-flash telemetry is available from the Beacon agent installed on the router.</p>}</section>;
+  const { telemetry, available } = useSystemTelemetry();
+  const resources = telemetry
+    ? [
+        {
+          name: "CPU",
+          value: telemetry.cpu.percent,
+          detail: `Load ${telemetry.cpu.load1.toFixed(2)}`,
+        },
+        {
+          name: "RAM",
+          value: telemetry.memory.percent,
+          detail: `${formatBinaryKb(telemetry.memory.usedKb)} / ${formatBinaryKb(telemetry.memory.totalKb)}`,
+        },
+        {
+          name: "Storage",
+          value: telemetry.storage.percent,
+          detail: `${formatBinaryKb(telemetry.storage.usedKb)} / ${formatBinaryKb(telemetry.storage.totalKb)}`,
+        },
+      ]
+    : [];
+  return (
+    <section className="panel resource-panel">
+      <div className="panel-head">
+        <div>
+          <p className="eyebrow">Live kernel telemetry</p>
+          <h2>Resource usage</h2>
+        </div>
+        <span className={available ? "root-badge" : "pill"}>
+          {available ? "LIVE" : "DEVICE ONLY"}
+        </span>
+      </div>
+      {telemetry ? (
+        <>
+          <div className="resource-grid">
+            {resources.map((item) => (
+              <article className="resource-meter" key={item.name}>
+                <div
+                  className="resource-ring"
+                  style={
+                    {
+                      "--usage": `${Math.min(100, Math.max(0, item.value)) * 3.6}deg`,
+                    } as CSSProperties
+                  }
+                >
+                  <span>
+                    <strong>{item.value}%</strong>
+                    <small>{item.name}</small>
+                  </span>
+                </div>
+                <p>{item.detail}</p>
+              </article>
+            ))}
+          </div>
+          <div className="resource-foot">
+            <span>
+              Free RAM{" "}
+              <strong>{formatBinaryKb(telemetry.memory.availableKb)}</strong>
+            </span>
+            <span>
+              Free writable flash{" "}
+              <strong>{formatBinaryKb(telemetry.storage.freeKb)}</strong>
+            </span>
+            <span>
+              Agent update{" "}
+              <strong>
+                {new Date(telemetry.updatedAt * 1000).toLocaleTimeString()}
+              </strong>
+            </span>
+          </div>
+        </>
+      ) : (
+        <p className="agent-unavailable">
+          Live CPU, RAM and writable-flash telemetry is available from the
+          Beacon agent installed on the router.
+        </p>
+      )}
+    </section>
+  );
 }
 
-function AdminFunctions({ requestAction }: { requestAction: (action: PendingAction) => void }) {
-  return <div className="tools-layout"><LedEffectPanel/>
-    <section className="panel root-card"><div className="panel-head"><div><p className="eyebrow">Verified on this MF293N</p><h2>Super administrator access</h2></div><span className="root-badge">UID 0</span></div><div className="root-command"><span>ADB identity</span><code>uid=0(admin) gid=0</code></div><div className="detail-table"><InfoRow label="Shell account" value="admin (root)" good/><InfoRow label="ADB transport" value="Enabled in debug USB mode" good/><InfoRow label="USB functions" value="RNDIS + DIAG + ADB + ACM"/><InfoRow label="Root filesystem" value="JFFS2, read-only"/></div><p className="helper-text">Admin Functions shows verified development information without creating a hidden user, enabling Telnet, or publishing a root shell to the LAN.</p></section>
-    <section className="panel boot-card"><div className="panel-head"><div><p className="eyebrow">Recovery controls</p><h2>Boot mode</h2></div><span className="pill">Guarded</span></div><p className="tools-intro">Normal restart uses the router's authenticated firmware API. Low-level modes stay locked until their exact MF293N transition and recovery path are validated.</p><div className="boot-options"><button onClick={()=>requestAction({action:"restart",title:"Restart normally",description:"Restart the MF293N in its normal operating mode. Wi-Fi and internet will be unavailable for several minutes.",danger:true})}><strong>Normal restart</strong><span>Verified · firmware API</span></button><button disabled title="A separate authenticated device helper is required"><strong>ADB / debug boot</strong><span>Current capability · no reboot needed</span></button><button disabled title="Not enabled until the MF293N sysfs transition is verified"><strong>Download mode</strong><span>Locked · validation required</span></button><button disabled title="Not enabled until a reliable U-Boot recovery path is verified"><strong>BL / bootloader</strong><span>Locked · validation required</span></button></div><div className="safety-note"><strong>Why two controls are locked</strong><p>The live firmware reports several vendor USB nodes, but their values do not document which write enters Download or BL mode. Guessing here could disconnect ADB or leave the router unbootable.</p></div></section>
-    <section className="panel wide-panel vray-about"><div><p className="eyebrow">Beacon advanced administration</p><h2>Admin Functions</h2><p>Development access, root status, diagnostics and guarded boot-mode controls for the MF293N.</p></div><a href="https://github.com/barrylk/zte-mf293n-dashboard" target="_blank" rel="noreferrer">GitHub project <span>↗</span></a><small>Beacon theme · Developed by Nirmala</small></section>
-  </div>;
+function AdminFunctions({
+  requestAction,
+}: {
+  requestAction: (action: PendingAction) => void;
+}) {
+  return (
+    <div className="tools-layout">
+      <LedEffectPanel />
+      <section className="panel root-card">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Verified on this MF293N</p>
+            <h2>Super administrator access</h2>
+          </div>
+          <span className="root-badge">UID 0</span>
+        </div>
+        <div className="root-command">
+          <span>ADB identity</span>
+          <code>uid=0(admin) gid=0</code>
+        </div>
+        <div className="detail-table">
+          <InfoRow label="Shell account" value="admin (root)" good />
+          <InfoRow
+            label="ADB transport"
+            value="Enabled in debug USB mode"
+            good
+          />
+          <InfoRow label="USB functions" value="RNDIS + DIAG + ADB + ACM" />
+          <InfoRow label="Root filesystem" value="JFFS2, read-only" />
+        </div>
+        <p className="helper-text">
+          Admin Functions shows verified development information without
+          creating a hidden user, enabling Telnet, or publishing a root shell to
+          the LAN.
+        </p>
+      </section>
+      <section className="panel boot-card">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Recovery controls</p>
+            <h2>Boot mode</h2>
+          </div>
+          <span className="pill">Guarded</span>
+        </div>
+        <p className="tools-intro">
+          Normal restart uses the router's authenticated firmware API. Low-level
+          modes stay locked until their exact MF293N transition and recovery
+          path are validated.
+        </p>
+        <div className="boot-options">
+          <button
+            onClick={() =>
+              requestAction({
+                action: "restart",
+                title: "Restart normally",
+                description:
+                  "Restart the MF293N in its normal operating mode. Wi-Fi and internet will be unavailable for several minutes.",
+                danger: true,
+              })
+            }
+          >
+            <strong>Normal restart</strong>
+            <span>Verified · firmware API</span>
+          </button>
+          <button
+            disabled
+            title="A separate authenticated device helper is required"
+          >
+            <strong>ADB / debug boot</strong>
+            <span>Current capability · no reboot needed</span>
+          </button>
+          <button
+            disabled
+            title="Not enabled until the MF293N sysfs transition is verified"
+          >
+            <strong>Download mode</strong>
+            <span>Locked · validation required</span>
+          </button>
+          <button
+            disabled
+            title="Not enabled until a reliable U-Boot recovery path is verified"
+          >
+            <strong>BL / bootloader</strong>
+            <span>Locked · validation required</span>
+          </button>
+        </div>
+        <div className="safety-note">
+          <strong>Why two controls are locked</strong>
+          <p>
+            The live firmware reports several vendor USB nodes, but their values
+            do not document which write enters Download or BL mode. Guessing
+            here could disconnect ADB or leave the router unbootable.
+          </p>
+        </div>
+      </section>
+      <section className="panel wide-panel vray-about">
+        <div>
+          <p className="eyebrow">Beacon advanced administration</p>
+          <h2>Admin Functions</h2>
+          <p>
+            Development access, root status, diagnostics and guarded boot-mode
+            controls for the MF293N.
+          </p>
+        </div>
+        <a
+          href="https://github.com/barrylk/zte-mf293n-dashboard"
+          target="_blank"
+          rel="noreferrer"
+        >
+          GitHub project <span>↗</span>
+        </a>
+        <small>Beacon theme · Developed by Nirmala</small>
+      </section>
+    </div>
+  );
 }
 
 function LedEffectPanel() {
-  const {telemetry,available}=useSystemTelemetry();
-  const led=telemetry?.led;
-  return <section className="panel wide-panel led-panel"><div className="panel-head"><div><p className="eyebrow">Signal-strength variations</p><h2>Custom cellular LED effect</h2></div><span className={available&&led?.supported?"root-badge":"pill"}>{available&&led?.supported?"UNLOCKED":"UNAVAILABLE"}</span></div><div className="led-layout"><div className="led-preview"><i className={led?.color==="green"?"green active":"green"}/><i className={led?.color==="white"?"white active":"white"}/><i className={led?.color==="red"?"red active":"red"}/><span>{led?`${title(led.color)} · ${title(led.state)}`:"Waiting for device"}</span></div><div className="led-profile"><InfoRow label="Excellent signal" value={`Green steady at ≥ ${led?.goodThreshold??-95} dBm`} good/><InfoRow label="Fair signal" value={`White pulse at ≥ ${led?.fairThreshold??-105} dBm`}/><InfoRow label="Weak / no service" value="Red pulse"/><InfoRow label="Current RSRP" value={led?`${led.rsrp} dBm`:"--"}/></div><div className="led-profile"><InfoRow label="Brightness" value={led?`${led.brightness} / 255`:"--"}/><InfoRow label="Pulse interval" value={led?`${led.pulseMs} ms`:"--"}/><InfoRow label="Controlled channels" value="Cellular green, white, red"/><InfoRow label="Protected channels" value="Power and Wi-Fi untouched" good/></div></div><p className="helper-text">Beacon applies this profile automatically from the modem&apos;s live RSRP reading. The profile is stored on-device and reloaded every three seconds; stock mode remains available in the agent configuration for recovery.</p></section>;
+  const { telemetry, available } = useSystemTelemetry();
+  const led = telemetry?.led;
+  return (
+    <section className="panel wide-panel led-panel">
+      <div className="panel-head">
+        <div>
+          <p className="eyebrow">Signal-strength variations</p>
+          <h2>Custom cellular LED effect</h2>
+        </div>
+        <span className={available && led?.supported ? "root-badge" : "pill"}>
+          {available && led?.supported ? "UNLOCKED" : "UNAVAILABLE"}
+        </span>
+      </div>
+      <div className="led-layout">
+        <div className="led-preview">
+          <i className={led?.color === "green" ? "green active" : "green"} />
+          <i className={led?.color === "white" ? "white active" : "white"} />
+          <i className={led?.color === "red" ? "red active" : "red"} />
+          <span>
+            {led
+              ? `${title(led.color)} · ${title(led.state)}`
+              : "Waiting for device"}
+          </span>
+        </div>
+        <div className="led-profile">
+          <InfoRow
+            label="Excellent signal"
+            value={`Green steady at ≥ ${led?.goodThreshold ?? -95} dBm`}
+            good
+          />
+          <InfoRow
+            label="Fair signal"
+            value={`White pulse at ≥ ${led?.fairThreshold ?? -105} dBm`}
+          />
+          <InfoRow label="Weak / no service" value="Red pulse" />
+          <InfoRow
+            label="Current RSRP"
+            value={led ? `${led.rsrp} dBm` : "--"}
+          />
+        </div>
+        <div className="led-profile">
+          <InfoRow
+            label="Brightness"
+            value={led ? `${led.brightness} / 255` : "--"}
+          />
+          <InfoRow
+            label="Pulse interval"
+            value={led ? `${led.pulseMs} ms` : "--"}
+          />
+          <InfoRow
+            label="Controlled channels"
+            value="Cellular green, white, red"
+          />
+          <InfoRow
+            label="Protected channels"
+            value="Power and Wi-Fi untouched"
+            good
+          />
+        </div>
+      </div>
+      <p className="helper-text">
+        Beacon applies this profile automatically from the modem&apos;s live
+        RSRP reading. The profile is stored on-device and reloaded every three
+        seconds; stock mode remains available in the agent configuration for
+        recovery.
+      </p>
+    </section>
+  );
 }
 
-type TunnelData = { dnsMode:string; primaryDns:string; secondaryDns:string; vpnPassthrough:boolean; runtimes:Record<string,boolean>; platform?:{architecture:string;kernel:string;freeFlashMb:number;ramMb:number;tunDevice:boolean;externalStorage:boolean}; reason:string };
+type TunnelData = {
+  dnsMode: string;
+  primaryDns: string;
+  secondaryDns: string;
+  vpnPassthrough: boolean;
+  runtimes: Record<string, boolean>;
+  platform?: {
+    architecture: string;
+    kernel: string;
+    freeFlashMb: number;
+    ramMb: number;
+    tunDevice: boolean;
+    externalStorage: boolean;
+  };
+  reason: string;
+};
 
-function TunnelsView({requestAction}:{requestAction:(action:PendingAction)=>void}) {
-  const [data,setData]=useState<TunnelData|null>(null);
-  const [manual,setManual]=useState(false);
-  const [primary,setPrimary]=useState("");
-  const [secondary,setSecondary]=useState("");
-  const [error,setError]=useState("");
-  async function load(){try{const response=await fetch("/api/router/tunnels",{cache:"no-store"});const result=await response.json();if(!response.ok||!result.ok)throw new Error(result.error||"Unable to load tunnel settings");setData(result);setManual(result.dnsMode==="manual");setPrimary(result.primaryDns||"");setSecondary(result.secondaryDns||"");setError("");}catch(caught){setError(caught instanceof Error?caught.message:"Unable to load tunnel settings");}}
-  useEffect(()=>{const timer=window.setTimeout(load,0);return()=>window.clearTimeout(timer);},[]);
-  return <div className="tunnels-layout"><section className="panel dns-panel"><div className="panel-head"><div><p className="eyebrow">Mobile data profile</p><h2>DNS servers</h2></div><span className="pill">{manual?"Manual":"Automatic"}</span></div>{error&&<div className="login-error">{error}</div>}<div className="segment-control dns-mode"><button className={!manual?"selected":""} onClick={()=>setManual(false)}>Carrier DNS</button><button className={manual?"selected":""} onClick={()=>setManual(true)}>Custom DNS</button></div><div className="settings-form dns-form"><label><span>Primary DNS</span><input disabled={!manual} value={primary} onChange={(event)=>setPrimary(event.target.value)} placeholder="1.1.1.1"/></label><label><span>Secondary DNS</span><input disabled={!manual} value={secondary} onChange={(event)=>setSecondary(event.target.value)} placeholder="8.8.8.8 (optional)"/></label></div><p className="helper-text">Custom DNS is stored in the active cellular APN profile. Reconnecting mobile data may be required before every client uses it.</p><button className="wide-button fit" onClick={()=>requestAction({endpoint:"tunnels",action:"dns_update",title:manual?"Apply custom DNS":"Use carrier DNS",description:manual?`Use ${primary}${secondary?` and ${secondary}`:""} for the router mobile connection.`:"Return the mobile connection to carrier-provided DNS.",payload:{manual,primaryDns:primary,secondaryDns:secondary},onSuccess:()=>window.setTimeout(load,700)})}>{manual?"Apply custom DNS":"Use automatic DNS"}</button></section><section className="panel vpn-status"><div className="panel-head"><div><p className="eyebrow">Client compatibility</p><h2>VPN passthrough</h2></div><span className={data?.vpnPassthrough?"root-badge":"pill"}>{data?.vpnPassthrough?"Enabled":"Disabled"}</span></div><p className="tools-intro">Devices behind Beacon can establish their own VPN connections through NAT when passthrough is enabled.</p><div className="detail-table"><InfoRow label="Router VPN passthrough" value={data?.vpnPassthrough?"Enabled":"Disabled"} good={data?.vpnPassthrough}/><InfoRow label="Router-hosted tunnel" value="Runtime slot ready"/></div></section><section className="panel tunnel-runtimes"><div className="panel-head"><div><p className="eyebrow">Runtime compatibility</p><h2>Tunnel runtimes</h2></div><span className="pill">ARMv7 platform</span></div><div className="runtime-grid">{["V2Ray","WireGuard","OpenVPN","IKEv2","PPTP","L2TP"].map((name)=>{const key=name.toLowerCase();const available=data?.runtimes?.[key]===true;return <article className={available?"runtime-card available":"runtime-card"} key={name}><span>{available?"Available":"Runtime slot"}</span><strong>{name}</strong><small>{available?"Ready to configure":"Awaiting compatible binary"}</small></article>;})}</div>{data?.platform&&<div className="platform-facts"><InfoRow label="CPU" value={data.platform.architecture}/><InfoRow label="Kernel" value={data.platform.kernel}/><InfoRow label="Free internal flash" value={`${data.platform.freeFlashMb} MB`}/><InfoRow label="System RAM" value={`${data.platform.ramMb} MB`}/><InfoRow label="TUN device" value={data.platform.tunDevice?"Available":"Not present"}/><InfoRow label="External storage" value={data.platform.externalStorage?"Mounted":"Not mounted"}/></div>}<div className="cell-lock-note"><strong>Runtime installation requirements</strong><p>{data?.reason||"Checking the installed firmware runtimes..."}</p></div></section></div>;
+function TunnelsView({
+  requestAction,
+}: {
+  requestAction: (action: PendingAction) => void;
+}) {
+  const [data, setData] = useState<TunnelData | null>(null);
+  const [manual, setManual] = useState(false);
+  const [primary, setPrimary] = useState("");
+  const [secondary, setSecondary] = useState("");
+  const [error, setError] = useState("");
+  async function load() {
+    try {
+      const response = await fetch("/api/router/tunnels", {
+        cache: "no-store",
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok)
+        throw new Error(result.error || "Unable to load tunnel settings");
+      setData(result);
+      setManual(result.dnsMode === "manual");
+      setPrimary(result.primaryDns || "");
+      setSecondary(result.secondaryDns || "");
+      setError("");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to load tunnel settings",
+      );
+    }
+  }
+  useEffect(() => {
+    const timer = window.setTimeout(load, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+  return (
+    <div className="tunnels-layout">
+      <section className="panel dns-panel">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Mobile data profile</p>
+            <h2>DNS servers</h2>
+          </div>
+          <span className="pill">{manual ? "Manual" : "Automatic"}</span>
+        </div>
+        {error && <div className="login-error">{error}</div>}
+        <div className="segment-control dns-mode">
+          <button
+            className={!manual ? "selected" : ""}
+            onClick={() => setManual(false)}
+          >
+            Carrier DNS
+          </button>
+          <button
+            className={manual ? "selected" : ""}
+            onClick={() => setManual(true)}
+          >
+            Custom DNS
+          </button>
+        </div>
+        <div className="settings-form dns-form">
+          <label>
+            <span>Primary DNS</span>
+            <input
+              disabled={!manual}
+              value={primary}
+              onChange={(event) => setPrimary(event.target.value)}
+              placeholder="1.1.1.1"
+            />
+          </label>
+          <label>
+            <span>Secondary DNS</span>
+            <input
+              disabled={!manual}
+              value={secondary}
+              onChange={(event) => setSecondary(event.target.value)}
+              placeholder="8.8.8.8 (optional)"
+            />
+          </label>
+        </div>
+        <p className="helper-text">
+          Custom DNS is stored in the active cellular APN profile. Reconnecting
+          mobile data may be required before every client uses it.
+        </p>
+        <button
+          className="wide-button fit"
+          onClick={() =>
+            requestAction({
+              endpoint: "tunnels",
+              action: "dns_update",
+              title: manual ? "Apply custom DNS" : "Use carrier DNS",
+              description: manual
+                ? `Use ${primary}${secondary ? ` and ${secondary}` : ""} for the router mobile connection.`
+                : "Return the mobile connection to carrier-provided DNS.",
+              payload: { manual, primaryDns: primary, secondaryDns: secondary },
+              onSuccess: () => window.setTimeout(load, 700),
+            })
+          }
+        >
+          {manual ? "Apply custom DNS" : "Use automatic DNS"}
+        </button>
+      </section>
+      <section className="panel vpn-status">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Client compatibility</p>
+            <h2>VPN passthrough</h2>
+          </div>
+          <span className={data?.vpnPassthrough ? "root-badge" : "pill"}>
+            {data?.vpnPassthrough ? "Enabled" : "Disabled"}
+          </span>
+        </div>
+        <p className="tools-intro">
+          Devices behind Beacon can establish their own VPN connections through
+          NAT when passthrough is enabled.
+        </p>
+        <div className="detail-table">
+          <InfoRow
+            label="Router VPN passthrough"
+            value={data?.vpnPassthrough ? "Enabled" : "Disabled"}
+            good={data?.vpnPassthrough}
+          />
+          <InfoRow label="Router-hosted tunnel" value="Runtime slot ready" />
+        </div>
+      </section>
+      <section className="panel tunnel-runtimes">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">Runtime compatibility</p>
+            <h2>Tunnel runtimes</h2>
+          </div>
+          <span className="pill">ARMv7 platform</span>
+        </div>
+        <div className="runtime-grid">
+          {["V2Ray", "WireGuard", "OpenVPN", "IKEv2", "PPTP", "L2TP"].map(
+            (name) => {
+              const key = name.toLowerCase();
+              const available = data?.runtimes?.[key] === true;
+              return (
+                <article
+                  className={
+                    available ? "runtime-card available" : "runtime-card"
+                  }
+                  key={name}
+                >
+                  <span>{available ? "Available" : "Runtime slot"}</span>
+                  <strong>{name}</strong>
+                  <small>
+                    {available
+                      ? "Ready to configure"
+                      : "Awaiting compatible binary"}
+                  </small>
+                </article>
+              );
+            },
+          )}
+        </div>
+        {data?.platform && (
+          <div className="platform-facts">
+            <InfoRow label="CPU" value={data.platform.architecture} />
+            <InfoRow label="Kernel" value={data.platform.kernel} />
+            <InfoRow
+              label="Free internal flash"
+              value={`${data.platform.freeFlashMb} MB`}
+            />
+            <InfoRow label="System RAM" value={`${data.platform.ramMb} MB`} />
+            <InfoRow
+              label="TUN device"
+              value={data.platform.tunDevice ? "Available" : "Not present"}
+            />
+            <InfoRow
+              label="External storage"
+              value={data.platform.externalStorage ? "Mounted" : "Not mounted"}
+            />
+          </div>
+        )}
+        <div className="cell-lock-note">
+          <strong>Runtime installation requirements</strong>
+          <p>{data?.reason || "Checking the installed firmware runtimes..."}</p>
+        </div>
+      </section>
+    </div>
+  );
 }
 
-type UpdateState = {status:"idle"|"checking"|"current"|"available"|"none"|"error";tag?:string;name?:string;url?:string;assetUrl?:string;updaterUrl?:string;message?:string};
+type UpdateState = {
+  status:
+    | "idle"
+    | "checking"
+    | "installing"
+    | "installed"
+    | "current"
+    | "available"
+    | "none"
+    | "error";
+  tag?: string;
+  name?: string;
+  url?: string;
+  assetUrl?: string;
+  digest?: string;
+  updaterUrl?: string;
+  message?: string;
+};
 
-function AboutView({data,version}:{data:RouterData;version:string}) {
-  const [update,setUpdate]=useState<UpdateState>({status:"idle"});
-  async function checkUpdate(){setUpdate({status:"checking"});try{const response=await fetch("https://api.github.com/repos/barrylk/zte-mf293n-dashboard/releases/latest",{headers:{Accept:"application/vnd.github+json"},cache:"no-store"});if(response.status===404){setUpdate({status:"none",message:"No GitHub Release has been published yet. Tag a release to activate the Beacon update channel."});return;}if(!response.ok)throw new Error(`GitHub returned ${response.status}`);const release=await response.json();const tag=String(release.tag_name||"").replace(/^v/i,"");const assets=Array.isArray(release.assets)?release.assets:[];const asset=assets.find((item:{name?:string})=>item.name==="beacon-router-ui.zip");const updater=assets.find((item:{name?:string})=>item.name==="update-beacon-from-github.ps1");const common={tag,name:release.name||release.tag_name,url:release.html_url,assetUrl:asset?.browser_download_url,updaterUrl:updater?.browser_download_url};setUpdate(tag&&compareVersions(tag,version)>0?{status:"available",...common,message:asset&&updater?"Verified Beacon OTA package and ADB updater are ready.":"The release is missing an OTA asset."}:{status:"current",...common,message:"This router is running the latest published Beacon version."});}catch(caught){setUpdate({status:"error",message:caught instanceof Error?caught.message:"Unable to reach GitHub"});}}
-  return <div className="about-layout"><section className="panel about-hero"><div className="about-monogram">BN</div><div><p className="eyebrow light">Independent router software</p><h2>Beacon</h2><p>A cleaner, carrier-neutral control center for the ZTE MF293N—built around real device data and verified firmware functions.</p><div className="about-version"><span>Beacon</span><strong>v{version}</strong><span>MF293N</span><strong>{shortVersion(data.softwareVersion)}</strong></div></div></section><section className="panel creator-card"><p className="eyebrow">Creator & maintainer</p><h2>Nirmala</h2><p>Beacon was designed, developed, tested and adapted for the ZTE MF293N by Nirmala in Sri Lanka.</p><div className="social-links"><a href="https://nirmala.is-a.dev/" target="_blank" rel="noreferrer" aria-label="Nirmala website"><b>NW</b><span>Website<small>nirmala.is-a.dev</small></span></a><a href="https://github.com/barrylk" target="_blank" rel="noreferrer" aria-label="Nirmala on GitHub"><b>GH</b><span>GitHub<small>@barrylk</small></span></a><a href="https://facebook.com/nirmalafromslk" target="_blank" rel="noreferrer" aria-label="Nirmala on Facebook"><b>f</b><span>Facebook<small>nirmalafromslk</small></span></a></div></section><section className="panel ota-card"><div className="panel-head"><div><p className="eyebrow">GitHub update channel</p><h2>Beacon OTA</h2></div><span className="pill">v{version}</span></div><p>Checks GitHub Releases for a newer Beacon web-and-device package. The original ZTE firmware and modem partitions are never replaced.</p><div className={`update-state ${update.status}`}><strong>{update.status==="idle"?"Ready to check":update.status==="checking"?"Checking GitHub…":update.status==="available"?`Beacon v${update.tag} available`:update.status==="current"?"Beacon is up to date":update.status==="none"?"Release channel not published":"Update check failed"}</strong>{update.message&&<span>{update.message}</span>}</div><div className="ota-actions"><button className="wide-button fit" disabled={update.status==="checking"} onClick={checkUpdate}>{update.status==="checking"?"Checking…":"Check for updates"}</button>{update.updaterUrl&&<a className="wide-button fit" href={update.updaterUrl}>Download OTA updater</a>}{update.assetUrl&&<a className="subtle-action" href={update.assetUrl}>OTA package</a>}{update.url&&<a className="subtle-action" href={update.url} target="_blank" rel="noreferrer">Release notes ↗</a>}</div><small className="ota-safety">The updater verifies SHA-256, stages both UI and device tools over root ADB, retains rollback copies, and never writes modem or bootloader partitions.</small></section><section className="panel credits-card"><p className="eyebrow">Project credits</p><h2>Built from the device outward</h2><div className="detail-table"><InfoRow label="Interface and integration" value="Nirmala"/><InfoRow label="Target hardware" value="ZTE MF293N"/><InfoRow label="Theme" value="Beacon"/><InfoRow label="Repository" value="barrylk/zte-mf293n-dashboard"/><InfoRow label="License and contributions" value="See GitHub project"/></div><a className="wide-button muted" href="https://github.com/barrylk/zte-mf293n-dashboard" target="_blank" rel="noreferrer">Open project on GitHub <span>↗</span></a></section></div>;
+function AboutView({ data, version }: { data: RouterData; version: string }) {
+  const [update, setUpdate] = useState<UpdateState>({ status: "idle" });
+  async function checkUpdate() {
+    setUpdate({ status: "checking" });
+    try {
+      const response = await fetch(
+        "https://api.github.com/repos/barrylk/zte-mf293n-dashboard/releases/latest",
+        {
+          headers: { Accept: "application/vnd.github+json" },
+          cache: "no-store",
+        },
+      );
+      if (response.status === 404) {
+        setUpdate({
+          status: "none",
+          message:
+            "No GitHub Release has been published yet. Tag a release to activate the Beacon update channel.",
+        });
+        return;
+      }
+      if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
+      const release = await response.json();
+      const tag = String(release.tag_name || "").replace(/^v/i, "");
+      const assets = Array.isArray(release.assets) ? release.assets : [];
+      const asset = assets.find(
+        (item: { name?: string }) => item.name === "beacon-router-ui.zip",
+      );
+      const updater = assets.find(
+        (item: { name?: string }) =>
+          item.name === "update-beacon-from-github.ps1",
+      );
+      const common = {
+        tag,
+        name: release.name || release.tag_name,
+        url: release.html_url,
+        assetUrl: asset?.browser_download_url,
+        digest: asset?.digest,
+        updaterUrl: updater?.browser_download_url,
+      };
+      setUpdate(
+        tag && compareVersions(tag, version) > 0
+          ? {
+              status: "available",
+              ...common,
+              message: asset?.digest
+                ? "Download the verified package, then select it here to install without ADB."
+                : "The release is missing a signed OTA digest.",
+            }
+          : {
+              status: "current",
+              ...common,
+              message:
+                "This router is running the latest published Beacon version.",
+            },
+      );
+    } catch (caught) {
+      setUpdate({
+        status: "error",
+        message:
+          caught instanceof Error ? caught.message : "Unable to reach GitHub",
+      });
+    }
+  }
+  async function installUpdate(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !update.digest || !update.tag) return;
+    if (file.name !== "beacon-router-ui.zip") {
+      setUpdate((current) => ({
+        ...current,
+        status: "error",
+        message: "Select the official beacon-router-ui.zip package.",
+      }));
+      return;
+    }
+    setUpdate((current) => ({
+      ...current,
+      status: "installing",
+      message:
+        "The router is verifying and staging Beacon. Keep power connected.",
+    }));
+    try {
+      const endpoint = `http://${window.location.hostname}:8090/install`;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/zip",
+          "X-Beacon-SHA256": update.digest,
+          "X-Beacon-Version": update.tag,
+        },
+        body: file,
+      });
+      const result = await response
+        .json()
+        .catch(() => ({ message: "OTA helper returned an invalid response" }));
+      if (!response.ok || !result.ok)
+        throw new Error(result.message || "Router rejected the OTA update");
+      setUpdate((current) => ({
+        ...current,
+        status: "installed",
+        message: `Beacon v${update.tag} installed. Reloading the interface...`,
+      }));
+      window.setTimeout(() => window.location.reload(), 2500);
+    } catch (caught) {
+      setUpdate((current) => ({
+        ...current,
+        status: "error",
+        message:
+          caught instanceof Error ? caught.message : "OTA installation failed",
+      }));
+    }
+  }
+  const busy = update.status === "checking" || update.status === "installing";
+  const statusTitle =
+    update.status === "idle"
+      ? "Ready to check"
+      : update.status === "checking"
+        ? "Checking GitHub…"
+        : update.status === "installing"
+          ? "Installing update…"
+          : update.status === "installed"
+            ? "Update installed"
+            : update.status === "available"
+              ? `Beacon v${update.tag} available`
+              : update.status === "current"
+                ? "Beacon is up to date"
+                : update.status === "none"
+                  ? "Release channel not published"
+                  : "Update failed";
+  return (
+    <div className="about-layout">
+      <section className="panel about-hero">
+        <div className="about-monogram">BN</div>
+        <div>
+          <p className="eyebrow light">Independent router software</p>
+          <h2>Beacon</h2>
+          <p>
+            A cleaner, carrier-neutral control center for the ZTE MF293N—built
+            around real device data and verified firmware functions.
+          </p>
+          <div className="about-version">
+            <span>Beacon</span>
+            <strong>v{version}</strong>
+            <span>MF293N</span>
+            <strong>{shortVersion(data.softwareVersion)}</strong>
+          </div>
+        </div>
+      </section>
+      <section className="panel creator-card">
+        <p className="eyebrow">Creator & maintainer</p>
+        <h2>Nirmala</h2>
+        <p>
+          Beacon was designed, developed, tested and adapted for the ZTE MF293N
+          by Nirmala in Sri Lanka.
+        </p>
+        <div className="social-links">
+          <a
+            href="https://nirmala.is-a.dev/"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Nirmala website"
+          >
+            <b>NW</b>
+            <span>
+              Website<small>nirmala.is-a.dev</small>
+            </span>
+          </a>
+          <a
+            href="https://github.com/barrylk"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Nirmala on GitHub"
+          >
+            <b>GH</b>
+            <span>
+              GitHub<small>@barrylk</small>
+            </span>
+          </a>
+          <a
+            href="https://facebook.com/nirmalafromslk"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Nirmala on Facebook"
+          >
+            <b>f</b>
+            <span>
+              Facebook<small>nirmalafromslk</small>
+            </span>
+          </a>
+        </div>
+      </section>
+      <section className="panel ota-card">
+        <div className="panel-head">
+          <div>
+            <p className="eyebrow">GitHub update channel</p>
+            <h2>Beacon OTA</h2>
+          </div>
+          <span className="pill">v{version}</span>
+        </div>
+        <p>
+          Checks GitHub Releases and installs verified Beacon web-and-device
+          packages directly on this router.
+        </p>
+        <div className={`update-state ${update.status}`}>
+          <strong>{statusTitle}</strong>
+          {update.message && <span>{update.message}</span>}
+        </div>
+        <div className="ota-actions">
+          <button
+            className="wide-button fit"
+            disabled={busy}
+            onClick={checkUpdate}
+          >
+            {update.status === "checking" ? "Checking…" : "Check for updates"}
+          </button>
+          {update.status === "available" &&
+            update.assetUrl &&
+            update.digest && (
+              <>
+                <a className="wide-button fit" href={update.assetUrl}>
+                  Download package
+                </a>
+                <label className="wide-button fit ota-install">
+                  Select package & install
+                  <input
+                    type="file"
+                    accept=".zip,application/zip"
+                    disabled={busy}
+                    onChange={installUpdate}
+                  />
+                </label>
+              </>
+            )}
+          {update.updaterUrl && (
+            <a className="subtle-action" href={update.updaterUrl}>
+              ADB fallback
+            </a>
+          )}
+          {update.url && (
+            <a
+              className="subtle-action"
+              href={update.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Release notes ↗
+            </a>
+          )}
+        </div>
+        <small className="ota-safety">
+          The on-device helper only accepts uploads while an administrator is
+          signed in, verifies the package against GitHub&apos;s SHA-256 digest,
+          stages the update, retains rollback copies, and never writes modem or
+          bootloader partitions.
+        </small>
+      </section>
+      <section className="panel credits-card">
+        <p className="eyebrow">Project credits</p>
+        <h2>Built from the device outward</h2>
+        <div className="detail-table">
+          <InfoRow label="Interface and integration" value="Nirmala" />
+          <InfoRow label="Target hardware" value="ZTE MF293N" />
+          <InfoRow label="Theme" value="Beacon" />
+          <InfoRow label="Repository" value="barrylk/zte-mf293n-dashboard" />
+          <InfoRow
+            label="License and contributions"
+            value="See GitHub project"
+          />
+        </div>
+        <a
+          className="wide-button muted"
+          href="https://github.com/barrylk/zte-mf293n-dashboard"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open project on GitHub <span>↗</span>
+        </a>
+      </section>
+    </div>
+  );
 }
 
-function SignalCard({ data }: { data: RouterData }) { return <section className="signal-card" aria-label="LTE signal quality"><div className="signal-head"><span>Signal quality</span><strong>{signalQuality(data.signalDbm)}</strong></div><div className="signal-visual"><div className="signal-rings"><i /><i /><i /><b /></div><div><strong>{data.signalDbm || "--"}</strong><span>dBm</span></div></div><div className="signal-data"><div><span>SINR</span><strong>{number(data.sinr)} dB</strong></div><div><span>RSRQ</span><strong>{number(data.rsrq)} dB</strong></div><div><span>Cell</span><strong>{data.cellId || "--"}</strong></div></div></section>; }
-function ActivityChart({ history }: { history: number[] }) { const max=Math.max(1,...history); const values=[...Array(Math.max(0,24-history.length)).fill(0),...history]; return <><div className="chart" aria-label="Live download activity chart"><div className="chart-scale"><span>{max.toFixed(1)}</span><span>{(max/2).toFixed(1)}</span><span>0</span></div><div className="bars">{values.map((value,i)=><i key={i} style={{height:`${value ? Math.max(4,value/max*100) : 1}%`}} className={i>=24-history.length?"recent":""} />)}</div></div><div className="chart-foot"><span>Earlier</span><span /><span /><span /><span>Now</span></div></>; }
-function DeviceList({ devices }: { devices: Device[] }) { return <div className="device-list compact">{devices.slice(0,3).map((device)=><div className="device-row" key={device.macAddress}><span className="device-mark">{device.mark}</span><span className="device-name"><strong>{device.name}</strong><small>{device.detail}</small></span><span className="device-activity"><i />Online</span></div>)}{devices.length===0&&<div className="empty-row small">No clients online</div>}</div>; }
-function InfoRow({ label, value, good=false }: { label: string; value: string; good?: boolean }) { return <div className="health-item"><span>{label}</span><strong>{good&&<i />}{value || "--"}</strong></div>; }
-function Metric({ label, value, unit }: { label: string; value: string; unit: string }) { return <div className="metric"><span>{label}</span><strong>{value}</strong><small>{unit}</small></div>; }
-function SummaryCard({ label, value, note }: { label: string; value: string; note: string }) { return <div className="summary-card"><span>{label}</span><strong>{value}</strong><small>{note}</small></div>; }
-function formatSpeed(value: number) { return value < 10 ? value.toFixed(2) : value.toFixed(1); }
-function number(value: number) { return Number.isFinite(value) ? String(value) : "--"; }
-function title(value: string) { return value ? value.charAt(0).toUpperCase()+value.slice(1) : "--"; }
-function maskIp(value: string) { const parts=value.split("."); return parts.length===4?`${parts[0]}.xxx.xxx.${parts[3]}`:"--"; }
-function maskId(value: string) { return value.length>7?`${value.slice(0,6)}${"*".repeat(value.length-9)}${value.slice(-3)}`:"--"; }
-function shortVersion(value: string) { const match=value.match(/B\d+$/); return match?.[0] || value || "--"; }
-function signalQuality(value: number) { if (!value) return "Unknown"; if(value>=-80)return"Excellent"; if(value>=-95)return"Good"; if(value>=-105)return"Fair"; return"Weak"; }
-function formatDuration(seconds: number) { if(!seconds)return"0 min"; const days=Math.floor(seconds/86400);const hours=Math.floor(seconds%86400/3600);const minutes=Math.floor(seconds%3600/60);return days?`${days}d ${hours}h`:hours?`${hours}h ${minutes}m`:`${minutes} min`; }
-function formatBinaryKb(kilobytes: number) { return kilobytes>=1024?`${(kilobytes/1024).toFixed(1)} MB`:`${kilobytes} KB`; }
-function formatBytes(bytes: number) { if(!bytes)return"0 B"; const units=["B","KB","MB","GB","TB"];const index=Math.min(Math.floor(Math.log(bytes)/Math.log(1024)),units.length-1);return`${(bytes/1024**index).toFixed(index>1?1:0)} ${units[index]}`; }
-function formatAuth(value: string) { return value==="WPA2PSK"?"WPA2 (AES)":value==="WPAPSKWPA2PSK"?"WPA/WPA2":value||"--"; }
-function barsFromRsrp(value:number){if(!value)return 0;if(value>=-80)return 5;if(value>=-90)return 4;if(value>=-100)return 3;if(value>=-110)return 2;return 1;}
-function compareVersions(left:string,right:string){const a=left.split(".").map((part)=>Number.parseInt(part,10)||0),b=right.split(".").map((part)=>Number.parseInt(part,10)||0);for(let index=0;index<Math.max(a.length,b.length);index++){const difference=(a[index]||0)-(b[index]||0);if(difference)return difference;}return 0;}
+function SignalCard({ data }: { data: RouterData }) {
+  return (
+    <section className="signal-card" aria-label="LTE signal quality">
+      <div className="signal-head">
+        <span>Signal quality</span>
+        <strong>{signalQuality(data.signalDbm)}</strong>
+      </div>
+      <div className="signal-visual">
+        <div className="signal-rings">
+          <i />
+          <i />
+          <i />
+          <b />
+        </div>
+        <div>
+          <strong>{data.signalDbm || "--"}</strong>
+          <span>dBm</span>
+        </div>
+      </div>
+      <div className="signal-data">
+        <div>
+          <span>SINR</span>
+          <strong>{number(data.sinr)} dB</strong>
+        </div>
+        <div>
+          <span>RSRQ</span>
+          <strong>{number(data.rsrq)} dB</strong>
+        </div>
+        <div>
+          <span>Cell</span>
+          <strong>{data.cellId || "--"}</strong>
+        </div>
+      </div>
+    </section>
+  );
+}
+function ActivityChart({ history }: { history: number[] }) {
+  const max = Math.max(1, ...history);
+  const values = [
+    ...Array(Math.max(0, 24 - history.length)).fill(0),
+    ...history,
+  ];
+  return (
+    <>
+      <div className="chart" aria-label="Live download activity chart">
+        <div className="chart-scale">
+          <span>{max.toFixed(1)}</span>
+          <span>{(max / 2).toFixed(1)}</span>
+          <span>0</span>
+        </div>
+        <div className="bars">
+          {values.map((value, i) => (
+            <i
+              key={i}
+              style={{
+                height: `${value ? Math.max(4, (value / max) * 100) : 1}%`,
+              }}
+              className={i >= 24 - history.length ? "recent" : ""}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="chart-foot">
+        <span>Earlier</span>
+        <span />
+        <span />
+        <span />
+        <span>Now</span>
+      </div>
+    </>
+  );
+}
+function DeviceList({ devices }: { devices: Device[] }) {
+  return (
+    <div className="device-list compact">
+      {devices.slice(0, 3).map((device) => (
+        <div className="device-row" key={device.macAddress}>
+          <span className="device-mark">{device.mark}</span>
+          <span className="device-name">
+            <strong>{device.name}</strong>
+            <small>{device.detail}</small>
+          </span>
+          <span className="device-activity">
+            <i />
+            Online
+          </span>
+        </div>
+      ))}
+      {devices.length === 0 && (
+        <div className="empty-row small">No clients online</div>
+      )}
+    </div>
+  );
+}
+function InfoRow({
+  label,
+  value,
+  good = false,
+}: {
+  label: string;
+  value: string;
+  good?: boolean;
+}) {
+  return (
+    <div className="health-item">
+      <span>{label}</span>
+      <strong>
+        {good && <i />}
+        {value || "--"}
+      </strong>
+    </div>
+  );
+}
+function Metric({
+  label,
+  value,
+  unit,
+}: {
+  label: string;
+  value: string;
+  unit: string;
+}) {
+  return (
+    <div className="metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{unit}</small>
+    </div>
+  );
+}
+function SummaryCard({
+  label,
+  value,
+  note,
+}: {
+  label: string;
+  value: string;
+  note: string;
+}) {
+  return (
+    <div className="summary-card">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{note}</small>
+    </div>
+  );
+}
+function formatSpeed(value: number) {
+  return value < 10 ? value.toFixed(2) : value.toFixed(1);
+}
+function number(value: number) {
+  return Number.isFinite(value) ? String(value) : "--";
+}
+function title(value: string) {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : "--";
+}
+function maskIp(value: string) {
+  const parts = value.split(".");
+  return parts.length === 4 ? `${parts[0]}.xxx.xxx.${parts[3]}` : "--";
+}
+function maskId(value: string) {
+  return value.length > 7
+    ? `${value.slice(0, 6)}${"*".repeat(value.length - 9)}${value.slice(-3)}`
+    : "--";
+}
+function shortVersion(value: string) {
+  const match = value.match(/B\d+$/);
+  return match?.[0] || value || "--";
+}
+function signalQuality(value: number) {
+  if (!value) return "Unknown";
+  if (value >= -80) return "Excellent";
+  if (value >= -95) return "Good";
+  if (value >= -105) return "Fair";
+  return "Weak";
+}
+function formatDuration(seconds: number) {
+  if (!seconds) return "0 min";
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return days
+    ? `${days}d ${hours}h`
+    : hours
+      ? `${hours}h ${minutes}m`
+      : `${minutes} min`;
+}
+function formatBinaryKb(kilobytes: number) {
+  return kilobytes >= 1024
+    ? `${(kilobytes / 1024).toFixed(1)} MB`
+    : `${kilobytes} KB`;
+}
+function formatBytes(bytes: number) {
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const index = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1,
+  );
+  return `${(bytes / 1024 ** index).toFixed(index > 1 ? 1 : 0)} ${units[index]}`;
+}
+function formatAuth(value: string) {
+  return value === "WPA2PSK"
+    ? "WPA2 (AES)"
+    : value === "WPAPSKWPA2PSK"
+      ? "WPA/WPA2"
+      : value || "--";
+}
+function barsFromRsrp(value: number) {
+  if (!value) return 0;
+  if (value >= -80) return 5;
+  if (value >= -90) return 4;
+  if (value >= -100) return 3;
+  if (value >= -110) return 2;
+  return 1;
+}
+function compareVersions(left: string, right: string) {
+  const a = left.split(".").map((part) => Number.parseInt(part, 10) || 0),
+    b = right.split(".").map((part) => Number.parseInt(part, 10) || 0);
+  for (let index = 0; index < Math.max(a.length, b.length); index++) {
+    const difference = (a[index] || 0) - (b[index] || 0);
+    if (difference) return difference;
+  }
+  return 0;
+}
